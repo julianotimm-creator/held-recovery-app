@@ -1,0 +1,34 @@
+﻿# Build artifacts
+.next/
+.vercel/
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env.local
+.env.*.local
+.env
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache
+.turbopack/
+*.cache
