@@ -21,7 +21,7 @@ export function MagicLinkLogin({ title, subtitle, redirectPath, notice }: Props)
     e.preventDefault();
     const value = email.trim();
     if (!value.includes("@")) {
-      setError("Informe um e-mail válido.");
+      setError("Please enter a valid email.");
       return;
     }
     setBusy(true);
@@ -47,20 +47,20 @@ export function MagicLinkLogin({ title, subtitle, redirectPath, notice }: Props)
             <Input
               type="email"
               required
-              placeholder="voce@email.com"
+              placeholder="you@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
             />
             <Button type="submit" className="w-full rounded-full" disabled={busy}>
-              {busy ? "Enviando..." : "Enviar link de acesso"}
+              {busy ? "Sending..." : "Send access link"}
             </Button>
           </form>
         ) : (
           <div className="mt-6 space-y-3">
             <p className="text-sm text-foreground">
-              Enviamos um e-mail para <strong>{email}</strong>. Abra a mensagem e toque no botão{" "}
-              <strong>“Log In”</strong> para entrar — pode deixar esta aba aberta.
+              We sent an email to <strong>{email}</strong>. Open the message and click the{" "}
+              <strong>“Log In”</strong> button to enter — you can leave this tab open.
             </p>
             <button
               type="button"
@@ -70,7 +70,7 @@ export function MagicLinkLogin({ title, subtitle, redirectPath, notice }: Props)
                 setError(null);
               }}
             >
-              Usar outro e-mail
+              Use another email
             </button>
           </div>
         )}

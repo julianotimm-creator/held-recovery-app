@@ -112,14 +112,19 @@ export async function retrieveCustomer(customerId: string) {
 /** Best-effort extraction of the app user id carried through Stripe metadata. */
 export function extractUserId(object: Record<string, unknown>): string | null {
   const metadata = (object["metadata"] ?? {}) as Record<string, string>;
-  return metadata["user_id"] ?? metadata["supabase_user_id"] ?? (object["client_reference_id"] as string) ?? null;
+  return (
+    metadata["user_id"] ??
+    metadata["supabase_user_id"] ??
+    (object["client_reference_id"] as string) ??
+    null
+  );
 }
 
-export const PLAN_NAME = "HELD Ilimitado";
-export const PLAN_AMOUNT_CENTS = 9999;
+export const PLAN_NAME = "HELD Unlimited";
+export const PLAN_AMOUNT_CENTS = 6999;
 export const PLAN_CURRENCY = "usd";
 
-/** Creates a Stripe Checkout Session for the $99.99/month subscription. */
+/** Creates a Stripe Checkout Session for the $69.99/month founding-member subscription. */
 export async function createSubscriptionCheckoutSession(params: {
   userId: string;
   email: string | null;
@@ -138,6 +143,7 @@ export async function createSubscriptionCheckoutSession(params: {
     "line_items[0][price_data][unit_amount]": String(PLAN_AMOUNT_CENTS),
     "line_items[0][price_data][recurring][interval]": "month",
     "line_items[0][price_data][product_data][name]": PLAN_NAME,
+    locale: "en",
   };
   if (params.email) body["customer_email"] = params.email;
 

@@ -3,8 +3,8 @@ import { MagicLinkLogin } from "@/components/MagicLinkLogin";
 export function EmailGate() {
   return (
     <MagicLinkLogin
-      title="Entrar no HELD"
-      subtitle="Só o e-mail. Sem senha, sem nome real — você recebe um nome anônimo automaticamente."
+      title="Enter HELD"
+      subtitle="Email only. No password, no real name — you get an anonymous name automatically."
       redirectPath="/chat"
     />
   );

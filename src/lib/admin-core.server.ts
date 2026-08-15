@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 export const NOT_ADMIN = "NOT_ADMIN";
-export const MONTHLY_PRICE = 99.99;
+export const MONTHLY_PRICE = 69.99;
 export const PAGE_SIZE = 20;
 
 /** Throws unless the signed-in user has the admin role. */

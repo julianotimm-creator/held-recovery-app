@@ -7,11 +7,7 @@ import { useSession } from "@/hooks/use-session";
 import { Button } from "@/components/ui/button";
 import { MagicLinkLogin } from "@/components/MagicLinkLogin";
 
-import {
-  getAbandonedUsers,
-  getAdminOverview,
-  getPayingSubscribers,
-} from "@/lib/admin.functions";
+import { getAbandonedUsers, getAdminOverview, getPayingSubscribers } from "@/lib/admin.functions";
 import type { AdminRow } from "@/lib/admin-core.server";
 
 const PAGE_SIZE = 20;
@@ -21,7 +17,11 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "HELD Admin — Painel interno" },
-      { name: "description", content: "Painel administrativo do HELD: métricas, assinantes e usuários que não converteram." },
+      {
+        name: "description",
+        content:
+          "Painel administrativo do HELD: métricas, assinantes e usuários que não converteram.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "HELD Admin" },
       { property: "og:description", content: "Painel administrativo interno do HELD." },
@@ -81,7 +81,6 @@ function AdminLogin({ expired = false }: { expired?: boolean }) {
   );
 }
 
-
 function AdminDashboard({ email }: { email: string }) {
   const queryClient = useQueryClient();
   const overviewFn = useServerFn(getAdminOverview);
@@ -91,7 +90,11 @@ function AdminDashboard({ email }: { email: string }) {
   const [abandonedPage, setAbandonedPage] = useState(1);
   const [payingPage, setPayingPage] = useState(1);
 
-  const overview = useQuery({ queryKey: ["admin-overview"], queryFn: () => overviewFn(), retry: false });
+  const overview = useQuery({
+    queryKey: ["admin-overview"],
+    queryFn: () => overviewFn(),
+    retry: false,
+  });
   const abandoned = useQuery({
     queryKey: ["admin-abandoned", abandonedPage],
     queryFn: () => abandonedFn({ data: { page: abandonedPage } }),
@@ -139,7 +142,6 @@ function AdminDashboard({ email }: { email: string }) {
       </div>
     );
   }
-
 
   const m = overview.data;
 

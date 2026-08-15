@@ -19,7 +19,7 @@ export function CreatePostModal({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
-      setError("Preencha título e conteúdo.");
+      setError("Please fill in title and content.");
       return;
     }
     setError(null);
@@ -31,7 +31,7 @@ export function CreatePostModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label="Novo tópico"
+      aria-label="New topic"
       onClick={onClose}
     >
       <form
@@ -39,14 +39,14 @@ export function CreatePostModal({
         onClick={(e) => e.stopPropagation()}
         className="surface-panel w-full max-w-md space-y-4 p-5"
       >
-        <h2 className="text-base font-semibold text-foreground">Novo tópico</h2>
+        <h2 className="text-base font-semibold text-foreground">New topic</h2>
 
         <div className="space-y-1">
           <Input
             value={title}
             maxLength={100}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título"
+            placeholder="Title"
             autoFocus
           />
           <p className="text-right text-[11px] text-muted-foreground">{title.length}/100</p>
@@ -58,7 +58,7 @@ export function CreatePostModal({
             maxLength={1000}
             rows={6}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Compartilhe o que está sentindo. Tudo aqui é anônimo."
+            placeholder="Share how you're feeling. Everything here is anonymous."
           />
           <p className="text-right text-[11px] text-muted-foreground">{content.length}/1000</p>
         </div>
@@ -67,10 +67,10 @@ export function CreatePostModal({
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
+            Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            Criar tópico
+            Create topic
           </Button>
         </div>
       </form>

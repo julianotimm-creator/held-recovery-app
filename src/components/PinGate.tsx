@@ -44,7 +44,7 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
   }
 
   async function submitCreate() {
-    if (pin.length !== 4) return setError("Digite 4 números.");
+    if (pin.length !== 4) return setError("Enter 4 numbers.");
     setFirstPin(pin);
     setPin("");
     setError(null);
@@ -52,11 +52,11 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
   }
 
   async function submitConfirm() {
-    if (pin.length !== 4) return setError("Digite 4 números.");
+    if (pin.length !== 4) return setError("Enter 4 numbers.");
     if (pin !== firstPin) {
       setPin("");
       setFirstPin("");
-      setError("PINs não conferem, tente novamente");
+      setError("PINs don't match, try again");
       setStep("create");
       return;
     }
@@ -65,19 +65,19 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
     setBusy(false);
     setPin("");
     setError(null);
-    setSuccess("PIN criado com sucesso! Memorize.");
+    setSuccess("PIN created successfully! Remember it.");
     setStep("created");
   }
 
   async function submitUnlock() {
-    if (pin.length !== 4) return setError("Digite 4 números.");
+    if (pin.length !== 4) return setError("Enter 4 numbers.");
     setBusy(true);
     const ok = await verifyPin(userKey, pin);
     setBusy(false);
     if (ok) onUnlocked();
     else {
       setPin("");
-      setError("PIN incorreto, tente novamente");
+      setError("Incorrect PIN, try again");
     }
   }
 
@@ -89,15 +89,15 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
       : await enrollBiometric(userKey);
     setBusy(false);
     if (ok) onUnlocked();
-    else setError("Biometria não reconhecida. Use seu PIN.");
+    else setError("Biometrics not recognized. Use your PIN.");
   }
 
   function submitForgot(e: React.FormEvent) {
     e.preventDefault();
-    if (!resetEmail.trim()) return setError("Informe seu e-mail.");
+    if (!resetEmail.trim()) return setError("Please enter your email.");
     clearPin(userKey);
     setFirstPin("");
-    window.alert(`Enviamos instruções para ${resetEmail.trim()}. Crie um novo PIN agora.`);
+    window.alert(`We sent instructions to ${resetEmail.trim()}. Create a new PIN now.`);
     setSuccess(null);
     reset("create");
   }
@@ -116,31 +116,31 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
   );
 
   if (step === "loading") {
-    return shell(<p className="text-center text-sm text-muted-foreground">Carregando...</p>);
+    return shell(<p className="text-center text-sm text-muted-foreground">Loading...</p>);
   }
 
   if (step === "forgot") {
     return shell(
       <form onSubmit={submitForgot} className="space-y-4">
-        <h1 className="text-2xl font-semibold text-foreground">Esqueci meu PIN</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Forgot my PIN</h1>
         <p className="text-sm text-muted-foreground">
-          Informe seu e-mail para receber instruções e criar um novo PIN.
+          Enter your email to receive instructions and create a new PIN.
         </p>
         <Input
           type="email"
           value={resetEmail}
           onChange={(e) => setResetEmail(e.target.value)}
-          placeholder="voce@email.com"
+          placeholder="you@email.com"
         />
         <Button type="submit" className="w-full rounded-full">
-          Enviar novo PIN
+          Send new PIN
         </Button>
         <button
           type="button"
           className="w-full text-xs text-muted-foreground underline"
           onClick={() => reset(hasPin(userKey) ? "unlock" : "create")}
         >
-          Voltar
+          Back
         </button>
         {feedback}
       </form>,
@@ -150,10 +150,10 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
   if (step === "created") {
     return shell(
       <div className="space-y-4 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">Tudo certo</h1>
-        <p className="text-sm text-success">PIN criado com sucesso! Memorize.</p>
+        <h1 className="text-2xl font-semibold text-foreground">All set</h1>
+        <p className="text-sm text-success">PIN created successfully! Remember it.</p>
         <Button className="w-full rounded-full" onClick={onUnlocked}>
-          Entrar no chat
+          Enter chat
         </Button>
       </div>,
     );
@@ -166,17 +166,17 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
     <div className="space-y-4">
       <h1 className="text-center text-2xl font-semibold text-foreground">
         {isCreate
-          ? "Crie seu PIN de 4 dígitos"
+          ? "Create your 4-digit PIN"
           : isConfirm
-            ? "Confirme seu PIN digitando novamente"
-            : "Digite seu PIN de 4 dígitos"}
+            ? "Confirm your PIN by typing it again"
+            : "Enter your 4-digit PIN"}
       </h1>
       <p className="text-center text-sm text-muted-foreground">
         {isCreate
-          ? "Escolha 4 números que só você saiba. Ele fica guardado apenas neste dispositivo."
+          ? "Choose 4 numbers only you know. It's stored only on this device."
           : isConfirm
-            ? "Digite os mesmos 4 números para confirmar."
-            : "Use o PIN que você escolheu."}
+            ? "Type the same 4 numbers to confirm."
+            : "Use the PIN you chose."}
       </p>
 
       <PinInput value={pin} onChange={setPin} autoFocus disabled={busy} />
@@ -190,12 +190,12 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
           else void submitUnlock();
         }}
       >
-        {isCreate ? "Confirmar este PIN" : isConfirm ? "Confirmar" : "Entrar"}
+        {isCreate ? "Confirm this PIN" : isConfirm ? "Confirm" : "Enter"}
       </Button>
 
       {step === "unlock" && bioAvailable && (
         <div className="rounded-2xl border border-border p-3 text-center">
-          <p className="text-sm text-foreground">Ou usar impressão digital?</p>
+          <p className="text-sm text-foreground">Or use fingerprint?</p>
           <div className="mt-2 flex gap-2">
             <Button
               variant="secondary"
@@ -203,14 +203,10 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
               disabled={busy}
               onClick={() => void useBiometrics()}
             >
-              <Fingerprint className="mr-1 size-4" /> Sim
+              <Fingerprint className="mr-1 size-4" /> Yes
             </Button>
-            <Button
-              variant="ghost"
-              className="flex-1 rounded-full"
-              onClick={() => setError(null)}
-            >
-              Não
+            <Button variant="ghost" className="flex-1 rounded-full" onClick={() => setError(null)}>
+              No
             </Button>
           </div>
         </div>
@@ -222,7 +218,7 @@ export function PinGate({ userKey, email, onUnlocked }: Props) {
           className="w-full text-xs text-muted-foreground underline"
           onClick={() => reset("forgot")}
         >
-          Esqueci meu PIN
+          Forgot my PIN
         </button>
       )}
 

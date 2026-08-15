@@ -58,7 +58,7 @@ export function CommunityForum() {
   if (stateLoading) {
     return (
       <div className="surface-panel flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-        Carregando...
+        Loading...
       </div>
     );
   }
@@ -70,19 +70,17 @@ export function CommunityForum() {
           <Lock className="size-5 text-muted-foreground" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-foreground">
-            Acesso exclusivo para membros.
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Assine agora por $99.99/mês</p>
+          <h2 className="text-base font-semibold text-foreground">Members-only access.</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Subscribe now for $69.99/month</p>
         </div>
         <Link
           to="/checkout"
           className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
         >
-          Assinar agora
+          Subscribe now
         </Link>
         <p className="text-[11px] text-muted-foreground">
-          Somente assinantes podem ver tópicos, publicar e comentar.
+          Only subscribers can view topics, post, and comment.
         </p>
       </div>
     );
@@ -105,18 +103,18 @@ export function CommunityForum() {
       <div className="flex items-center justify-between gap-2 border-b border-border p-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">HELD Community</h2>
-          <p className="text-[11px] text-muted-foreground">Tudo aqui é anônimo.</p>
+          <p className="text-[11px] text-muted-foreground">Everything here is anonymous.</p>
         </div>
         <Button size="sm" className="rounded-full" onClick={() => setShowModal(true)}>
-          <Plus className="size-4" /> Novo Tópico
+          <Plus className="size-4" /> New Topic
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {isLoading && <p className="text-sm text-muted-foreground">Carregando mural...</p>}
+        {isLoading && <p className="text-sm text-muted-foreground">Loading community...</p>}
         {!isLoading && posts?.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            Ninguém abriu um tópico ainda. Seja o primeiro.
+            No one has started a topic yet. Be the first.
           </p>
         )}
         {posts && posts.length > 0 && <PostList posts={posts} onSelect={setSelectedPost} />}

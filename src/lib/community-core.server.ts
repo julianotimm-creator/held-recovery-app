@@ -9,9 +9,9 @@ export const SUBSCRIPTION_REQUIRED = "SUBSCRIPTION_REQUIRED";
 export async function requireSubscriber(supabase: Client, userId: string): Promise<void> {
   const { data } = await supabase
     .from("users")
-    .select("is_paid")
+    .select("subscription_active")
     .eq("id", userId)
     .maybeSingle();
 
-  if (!data?.is_paid) throw new Error(SUBSCRIPTION_REQUIRED);
+  if (!data?.subscription_active) throw new Error(SUBSCRIPTION_REQUIRED);
 }

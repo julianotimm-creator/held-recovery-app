@@ -16,7 +16,7 @@ import {
 const EMOJIS = ["❤️", "👂", "🙏"] as const;
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -109,7 +109,7 @@ export function PostDetail({
           onClick={onBack}
           className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="size-3.5" /> Voltar
+          <ArrowLeft className="size-3.5" /> Back
         </button>
 
         <div className="flex items-start justify-between gap-2">
@@ -119,7 +119,7 @@ export function PostDetail({
               type="button"
               onClick={() => onDelete(post.id)}
               className="text-muted-foreground transition-colors hover:text-destructive"
-              aria-label="Apagar tópico"
+              aria-label="Delete topic"
             >
               <Trash2 className="size-4" />
             </button>
@@ -154,9 +154,9 @@ export function PostDetail({
 
       <div className="flex flex-1 flex-col overflow-hidden md:w-[65%]">
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {isLoading && <p className="text-sm text-muted-foreground">Carregando comentários...</p>}
+          {isLoading && <p className="text-sm text-muted-foreground">Loading comments...</p>}
           {!isLoading && comments?.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nenhum comentário ainda. Seja o primeiro.</p>
+            <p className="text-sm text-muted-foreground">No comments yet. Be the first.</p>
           )}
           {comments?.map((c) => (
             <div key={c.id} className="rounded-2xl bg-secondary px-4 py-3">
@@ -175,12 +175,12 @@ export function PostDetail({
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escreva um comentário..."
+            placeholder="Write a comment..."
             className="flex-1"
           />
           <Button type="submit" size="icon" className="rounded-full" disabled={comment.isPending}>
             <Send className="size-4" />
-            <span className="sr-only">Comentar</span>
+            <span className="sr-only">Comment</span>
           </Button>
         </form>
       </div>

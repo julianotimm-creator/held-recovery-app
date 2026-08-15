@@ -50,7 +50,7 @@ export function PinInput({ value, onChange, autoFocus, disabled }: Props) {
         disabled={disabled}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
         className="absolute size-px opacity-0"
-        aria-label="PIN de 4 dígitos"
+        aria-label="4-digit PIN"
       />
     </button>
   );

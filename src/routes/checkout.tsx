@@ -7,18 +7,17 @@ import { useSession } from "@/hooks/use-session";
 import { EmailGate } from "@/components/EmailGate";
 import { createCheckoutSession } from "@/lib/checkout.functions";
 
-
 export const Route = createFileRoute("/checkout")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Assinar — HELD" },
+      { title: "Subscribe — HELD" },
       {
         name: "description",
-        content: "Desbloqueie mensagens ilimitadas com o HELD por um valor mensal simples.",
+        content: "Unlock unlimited messages with HELD for a simple monthly price.",
       },
-      { property: "og:title", content: "Assinar — HELD" },
-      { property: "og:description", content: "Mensagens ilimitadas, anônimas, 24/7." },
+      { property: "og:title", content: "Subscribe — HELD" },
+      { property: "og:description", content: "Unlimited, anonymous messages, 24/7." },
       { property: "og:url", content: "https://www.always-beside.com/checkout" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -28,7 +27,7 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
-const perks = ["Mensagens ilimitadas", "Histórico salvo e privado", "Comunidade HELD interna"];
+const perks = ["Unlimited Messages", "Saved and Private History", "HELD Internal Community"];
 
 function CheckoutPage() {
   const { session, loading } = useSession();
@@ -42,7 +41,7 @@ function CheckoutPage() {
       window.location.href = url;
     } catch (error) {
       console.error(error);
-      toast.error("Não foi possível abrir o pagamento. Tente novamente.");
+      toast.error("Couldn't open payment. Please try again.");
       setSubmitting(false);
     }
   }
@@ -50,7 +49,7 @@ function CheckoutPage() {
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
-        Carregando...
+        Loading...
       </div>
     );
   }
@@ -60,9 +59,10 @@ function CheckoutPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
       <div className="surface-panel p-6">
-        <h1 className="text-2xl font-semibold text-foreground">Continue conversando</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Continue the Conversation</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Suas mensagens gratuitas acabaram. Assine o HELD Ilimitado por US$ 99,99/mês.
+          Your free messages have ended. Subscribe to unlimited HELD for US$ 69.99/month — founding
+          member price for the first 100 subscribers.
         </p>
 
         <ul className="mt-6 space-y-2">
@@ -81,16 +81,15 @@ function CheckoutPage() {
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
         >
           {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-          {submitting ? "Abrindo pagamento..." : "Assinar por US$ 99,99/mês"}
+          {submitting ? "Processing payment..." : "Subscribe for US$ 69.99/month"}
         </button>
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          Pagamento seguro processado pela Stripe.
+          Secure payment processed by Stripe.
         </p>
-
 
         <div className="mt-6 space-y-2 text-center">
           <Link to="/chat" className="block text-sm text-muted-foreground underline">
-            Voltar ao chat
+            Back to Chat
           </Link>
         </div>
       </div>

@@ -19,13 +19,13 @@ export const Route = createFileRoute("/chat")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Conversar — HELD" },
+      { title: "Chat — HELD" },
       {
         name: "description",
-        content: "Converse anonimamente com o HELD, seu companheiro de IA para recuperação.",
+        content: "Chat anonymously with HELD, your AI companion for recovery.",
       },
-      { property: "og:title", content: "Conversar — HELD" },
-      { property: "og:description", content: "Um espaço anônimo para falar, a qualquer hora." },
+      { property: "og:title", content: "Chat — HELD" },
+      { property: "og:description", content: "An anonymous space to talk, any time." },
       { property: "og:url", content: "https://www.always-beside.com/chat" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -50,7 +50,7 @@ function ChatPage() {
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
-        Carregando...
+        Loading...
       </div>
     );
   }
@@ -67,14 +67,13 @@ function ChatPage() {
     );
   }
 
-
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-4 py-4">
       <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-secondary p-1">
         {(
           [
-            { key: "private", label: "👤 Chat Privado" },
-            { key: "community", label: "👥 Comunidade" },
+            { key: "private", label: "👤 Private Chat" },
+            { key: "community", label: "👥 Community" },
           ] as const
         ).map((tab) => (
           <button
@@ -96,7 +95,6 @@ function ChatPage() {
     </div>
   );
 }
-
 
 function ChatWindow() {
   const fetchState = useServerFn(getChatState);
@@ -139,24 +137,23 @@ function ChatWindow() {
 
   return (
     <div className="flex flex-1 flex-col">
-
       <header className="flex items-center justify-between gap-3 pb-3">
         <Link to="/" className="text-lg font-semibold text-foreground">
           HELD
         </Link>
         <span className="text-xs text-muted-foreground">
           {data?.isPaid
-            ? `${data.username} · mensagens ilimitadas`
-            : `${remaining} mensagens restantes`}
+            ? `${data.username} · unlimited messages`
+            : `${remaining} remaining messages`}
         </span>
       </header>
 
       <div className="surface-panel flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {isLoading && <p className="text-sm text-muted-foreground">Carregando conversa...</p>}
+          {isLoading && <p className="text-sm text-muted-foreground">Loading conversation...</p>}
           {!isLoading && data?.messages.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Você está seguro aqui. Como está se sentindo agora?
+              You're safe here. How are you feeling right now?
             </p>
           )}
           {data?.messages.map((m) => (
@@ -178,7 +175,7 @@ function ChatWindow() {
           {mutation.isPending && (
             <div className="flex justify-start">
               <div className="rounded-2xl rounded-bl-sm bg-secondary px-4 py-2.5 text-sm text-muted-foreground">
-                escrevendo...
+                typing...
               </div>
             </div>
           )}
@@ -188,13 +185,13 @@ function ChatWindow() {
         {limitReached ? (
           <div className="border-t border-border p-4 text-center">
             <p className="text-sm text-foreground">
-              Suas {FREE_MESSAGE_LIMIT} mensagens gratuitas acabaram.
+              Your {FREE_MESSAGE_LIMIT} free messages have ended.
             </p>
             <Link
               to="/checkout"
               className="mt-3 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
             >
-              Continuar conversando
+              Continue the Conversation
             </Link>
           </div>
         ) : (
@@ -202,12 +199,17 @@ function ChatWindow() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Escreva o que está sentindo..."
+              placeholder="Write how you're feeling..."
               className="flex-1"
             />
-            <Button type="submit" size="icon" className="rounded-full" disabled={mutation.isPending}>
+            <Button
+              type="submit"
+              size="icon"
+              className="rounded-full"
+              disabled={mutation.isPending}
+            >
               <Send className="size-4" />
-              <span className="sr-only">Enviar</span>
+              <span className="sr-only">Send</span>
             </Button>
           </form>
         )}
@@ -215,7 +217,7 @@ function ChatWindow() {
 
       {error && <p className="pt-2 text-center text-xs text-destructive">{error}</p>}
       <p className="pt-3 text-center text-[11px] text-muted-foreground">
-        Em crise? Ligue 988 (EUA) ou 188 CVV (Brasil).
+        In crisis? Call 988 (USA)
       </p>
     </div>
   );

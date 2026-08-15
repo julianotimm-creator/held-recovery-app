@@ -1,7 +1,7 @@
 import type { CommunityPost } from "@/lib/community.functions";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",

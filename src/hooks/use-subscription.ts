@@ -16,7 +16,6 @@ export function useSubscription(pollUntilPaid = false, enabled = true) {
     queryFn: () => fetchState(),
     enabled,
     refetchOnWindowFocus: true,
-    refetchInterval: (query) =>
-      pollUntilPaid && query.state.data?.isPaid !== true ? 3000 : false,
+    refetchInterval: (query) => (pollUntilPaid && query.state.data?.isPaid !== true ? 3000 : false),
   });
 }

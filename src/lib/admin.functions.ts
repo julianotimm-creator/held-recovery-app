@@ -13,18 +13,15 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     const paying = await supabaseAdmin
       .from("users")
       .select("id", { count: "exact", head: true })
-      .eq("is_paid", true);
+      .eq("subscription_active", true);
     const churned = await supabaseAdmin
       .from("users")
       .select("id", { count: "exact", head: true })
-      .eq("is_paid", false)
-      .not("paid_at", "is", null);
+      .eq("subscription_active", false)
+      .not("stripe_customer_id", "is", null);
 
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const active = await supabaseAdmin
-      .from("messages")
-      .select("user_id")
-      .gte("created_at", since);
+    const active = await supabaseAdmin.from("messages").select("user_id").gte("created_at", since);
     const activeToday = new Set((active.data ?? []).map((m) => m.user_id)).size;
 
     const payingUsers = paying.count ?? 0;
@@ -51,14 +48,17 @@ export const getAbandonedUsers = createServerFn({ method: "GET" })
     const from = (data.page - 1) * PAGE_SIZE;
     const { data: rows, count } = await supabaseAdmin
       .from("users")
-      .select("id, message_count, created_at, paid_at", { count: "exact" })
+      .select("id, message_count, created_at, updated_at", { count: "exact" })
       .gte("message_count", 10)
-      .eq("is_paid", false)
+      .eq("subscription_active", false)
       .order("created_at", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
 
     const list = rows ?? [];
-    const emails = await emailMap(supabaseAdmin, list.map((r) => r.id));
+    const emails = await emailMap(
+      supabaseAdmin,
+      list.map((r) => r.id),
+    );
 
     return {
       total: count ?? 0,
@@ -67,7 +67,7 @@ export const getAbandonedUsers = createServerFn({ method: "GET" })
         email: emails[r.id] ?? "—",
         messageCount: r.message_count,
         createdAt: r.created_at,
-        paidAt: r.paid_at,
+        paidAt: r.updated_at,
       })),
     };
   });
@@ -83,13 +83,16 @@ export const getPayingSubscribers = createServerFn({ method: "GET" })
     const from = (data.page - 1) * PAGE_SIZE;
     const { data: rows, count } = await supabaseAdmin
       .from("users")
-      .select("id, message_count, created_at, paid_at", { count: "exact" })
-      .eq("is_paid", true)
-      .order("paid_at", { ascending: false, nullsFirst: false })
+      .select("id, message_count, created_at, updated_at", { count: "exact" })
+      .eq("subscription_active", true)
+      .order("updated_at", { ascending: false, nullsFirst: false })
       .range(from, from + PAGE_SIZE - 1);
 
     const list = rows ?? [];
-    const emails = await emailMap(supabaseAdmin, list.map((r) => r.id));
+    const emails = await emailMap(
+      supabaseAdmin,
+      list.map((r) => r.id),
+    );
 
     return {
       total: count ?? 0,
@@ -98,7 +101,7 @@ export const getPayingSubscribers = createServerFn({ method: "GET" })
         email: emails[r.id] ?? "—",
         messageCount: r.message_count,
         createdAt: r.created_at,
-        paidAt: r.paid_at,
+        paidAt: r.updated_at,
       })),
     };
   });

@@ -23,10 +23,10 @@ export const Route = createFileRoute("/dashboard")({
   },
   head: () => ({
     meta: [
-      { title: "Sua conta — HELD" },
-      { name: "description", content: "Sua área de membro HELD: comunidade, chat e conta." },
-      { property: "og:title", content: "Sua conta — HELD" },
-      { property: "og:description", content: "Área de membro do HELD." },
+      { title: "Your Account — HELD" },
+      { name: "description", content: "Your HELD member area: community, chat, and account." },
+      { property: "og:title", content: "Your Account — HELD" },
+      { property: "og:description", content: "HELD member area." },
       { property: "og:url", content: "https://www.always-beside.com/dashboard" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -69,7 +69,7 @@ function DashboardPage() {
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
-        Carregando...
+        Loading...
       </div>
     );
   }
@@ -78,17 +78,16 @@ function DashboardPage() {
 
   const confirming = justPaid && state?.isPaid !== true;
 
-
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
       <div className="surface-panel p-6 text-center">
         <h1 className="text-2xl font-semibold text-foreground">
-          {confirming ? "Confirmando seu pagamento..." : "Você é membro pago!"}
+          {confirming ? "Confirming your payment..." : "You're a paid member!"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {confirming
-            ? "Isso leva alguns segundos. Vamos liberar seu acesso automaticamente."
-            : "Mensagens ilimitadas com o HELD, sempre anônimas."}
+            ? "This takes a few seconds. We'll unlock your access automatically."
+            : "Unlimited messages with HELD, always anonymous."}
         </p>
 
         <div className="mt-6 space-y-3">
@@ -97,19 +96,19 @@ function DashboardPage() {
             search={{ tab: "community" }}
             className="block w-full rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
           >
-            Entrar na Comunidade HELD
+            Join the HELD Community
           </Link>
           <Link
             to="/chat"
             className="block w-full rounded-full border border-border px-5 py-3 text-sm font-medium text-foreground"
           >
-            Ir para o chat
+            Go to Chat
           </Link>
           <button
             onClick={signOut}
             className="w-full px-5 py-2 text-sm text-muted-foreground underline"
           >
-            Sair
+            Sign out
           </button>
         </div>
       </div>

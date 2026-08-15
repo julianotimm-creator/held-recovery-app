@@ -58,8 +58,12 @@ export const listCommunityPosts = createServerFn({ method: "GET" })
 export const createCommunityPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { title: string; content: string }) => {
-    const title = String(input?.title ?? "").trim().slice(0, 100);
-    const content = String(input?.content ?? "").trim().slice(0, 1000);
+    const title = String(input?.title ?? "")
+      .trim()
+      .slice(0, 100);
+    const content = String(input?.content ?? "")
+      .trim()
+      .slice(0, 1000);
     if (!title) throw new Error("Título obrigatório");
     if (!content) throw new Error("Conteúdo obrigatório");
     return { title, content };
@@ -122,7 +126,9 @@ export const listPostComments = createServerFn({ method: "GET" })
 export const createPostComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { postId: string; content: string }) => {
-    const content = String(input?.content ?? "").trim().slice(0, 1000);
+    const content = String(input?.content ?? "")
+      .trim()
+      .slice(0, 1000);
     if (!content) throw new Error("Comentário vazio");
     return { postId: String(input?.postId ?? ""), content };
   })

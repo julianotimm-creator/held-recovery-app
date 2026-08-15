@@ -32,7 +32,8 @@ export const confirmCheckoutSession = createServerFn({ method: "POST" })
 
     const owner =
       (session["client_reference_id"] as string | null) ??
-      ((session["metadata"] as Record<string, string> | undefined)?.["user_id"] ?? null);
+      (session["metadata"] as Record<string, string> | undefined)?.["user_id"] ??
+      null;
     if (owner !== context.userId) return { isPaid: false as boolean };
 
     const paid =
@@ -44,7 +45,7 @@ export const confirmCheckoutSession = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("users")
-      .update({ is_paid: true, paid_at: new Date().toISOString() })
+      .update({ subscription_active: true, subscription_status: "active" })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);
 
