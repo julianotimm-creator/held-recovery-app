@@ -89,7 +89,7 @@ function Landing() {
                 >
                   Talk to HELD — Free
                 </button>
-                
+                <a
                   href="#pricing"
                   className="rounded-full border border-slate-700 px-7 py-3.5 transition-colors hover:bg-slate-800"
                 >
@@ -371,7 +371,7 @@ function Landing() {
               <p className="text-sm font-semibold text-red-400">United States</p>
               <p className="mt-1 text-sm font-medium">988 Suicide & Crisis Lifeline</p>
               <p className="mt-2 text-xs text-slate-400">Call or text:</p>
-              
+              <a
                 href="tel:988"
                 className="mt-1 inline-block text-4xl font-bold text-red-400 transition-opacity hover:opacity-80"
               >
