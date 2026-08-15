@@ -1,3 +1,4 @@
+import { createFileRoute } from '@tanstack/react-router'
 export const Route = createFileRoute("/api/public/webhooks/stripe")({
   beforeLoad: async ({ context }) => context,
 });

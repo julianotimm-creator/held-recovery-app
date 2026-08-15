@@ -10,11 +10,10 @@ import {
   Coffee,
   Train,
   CalendarDays,
-  Star,
   AlertTriangle,
 } from "lucide-react";
 
-export const Route = createFileRoute("/")(({
+export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "HELD — When you need to talk, we're here" },
@@ -26,15 +25,17 @@ export const Route = createFileRoute("/")(({
     ],
   }),
   component: Landing,
-}));
+});
 
 function Landing() {
   const [accepted, setAccepted] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
     if (!accepted) {
-      alert("Please accept the Terms of Service first");
+      setConsentError(true);
+      document.getElementById("consent")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     navigate({ to: "/chat" });
@@ -46,12 +47,12 @@ function Landing() {
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <h1 className="text-2xl font-bold text-purple-400">HELD</h1>
-          <Link
-            to="/chat"
+          <a
+            href="#consent"
             className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
           >
             Get Started
-          </Link>
+          </a>
         </nav>
       </header>
 
@@ -71,8 +72,8 @@ function Landing() {
                 </span>
               </h2>
               <p className="mt-6 text-lg text-slate-400">
-                An AI companion that remembers you, understands what you've been going through,
-                and is available 24/7 — especially when no one else is.
+                An AI companion that remembers you, understands what you've been going through, and
+                is available 24/7 — especially when no one else is.
               </p>
               <p className="mt-3 text-sm text-slate-500">
                 Private. Judgment-free. Built by people who've been there.
@@ -84,8 +85,7 @@ function Landing() {
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                 <button
                   onClick={handleGetStarted}
-                  disabled={!accepted}
-                  className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-7 py-3.5 font-medium transition-all disabled:opacity-50"
+                  className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-7 py-3.5 font-medium transition-all"
                 >
                   Talk to HELD — Free
                 </button>
@@ -97,21 +97,32 @@ function Landing() {
                 </a>
               </div>
 
-              <div className="mt-6 flex flex-col items-center gap-4 lg:items-start">
+              <div
+                id="consent"
+                className="mt-6 flex scroll-mt-24 flex-col items-center gap-4 lg:items-start"
+              >
                 <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-400">
                   <input
                     type="checkbox"
                     checked={accepted}
-                    onChange={(e) => setAccepted(e.target.checked)}
+                    onChange={(e) => {
+                      setAccepted(e.target.checked);
+                      if (e.target.checked) setConsentError(false);
+                    }}
                     className="mt-0.5 size-5 rounded"
                   />
                   <span>
-                    I accept the{" "}
+                    I am 18 or older and I accept the{" "}
                     <Link to="/terms" className="text-purple-400 underline">
                       Terms of Service
                     </Link>
                   </span>
                 </label>
+                {consentError && (
+                  <p role="alert" className="text-sm font-medium text-red-400">
+                    Please confirm you are 18+ and accept the Terms of Service to continue.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -148,7 +159,10 @@ function Landing() {
                   text: "Your therapist's office is closed. Your brain won't shut up. HELD is here. Always.",
                 },
               ].map(({ icon: Icon, title, text }) => (
-                <div key={title} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+                <div
+                  key={title}
+                  className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6"
+                >
                   <Icon className="size-6 text-purple-400" />
                   <h4 className="mt-4 font-semibold">{title}</h4>
                   <p className="mt-2 text-sm text-slate-400">{text}</p>
@@ -191,7 +205,10 @@ function Landing() {
                   text: "Community moderated by trained specialists. Zero judgment, zero toxicity.",
                 },
               ].map(({ icon: Icon, title, text }) => (
-                <div key={title} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+                <div
+                  key={title}
+                  className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6"
+                >
                   <Icon className="size-6 text-purple-400" />
                   <h4 className="mt-4 font-semibold">{title}</h4>
                   <p className="mt-2 text-sm text-slate-400">{text}</p>
@@ -219,7 +236,10 @@ function Landing() {
                   text: "The more you use HELD, the less you start over.",
                 },
               ].map(({ title, text }) => (
-                <div key={title} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6 text-center">
+                <div
+                  key={title}
+                  className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6 text-center"
+                >
                   <h4 className="font-semibold">{title}</h4>
                   <p className="mt-2 text-sm text-slate-400">{text}</p>
                 </div>
@@ -231,7 +251,8 @@ function Landing() {
                 Membership closes at 1,000 members
               </p>
               <p className="mt-4 text-sm text-slate-400">
-                We cap membership to protect the quality of every conversation. Once we reach 1,000 members, HELD closes to new sign-ups.
+                We cap membership to protect the quality of every conversation. Once we reach 1,000
+                members, HELD closes to new sign-ups.
               </p>
 
               <div className="mt-6">
@@ -251,8 +272,7 @@ function Landing() {
 
               <button
                 onClick={handleGetStarted}
-                disabled={!accepted}
-                className="mt-6 w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 py-3 font-medium transition-all disabled:opacity-50"
+                className="mt-6 w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 py-3 font-medium transition-all"
               >
                 Start with 10 free messages
               </button>
@@ -260,39 +280,33 @@ function Landing() {
           </div>
         </section>
 
-        {/* Testimonials */}
+        {/* Honest status — no testimonials until we have real members */}
         <section className="px-5 py-16">
-          <div className="mx-auto max-w-6xl">
-            <h3 className="text-center text-3xl font-bold">Early Members</h3>
+          <div className="mx-auto max-w-3xl">
+            <h3 className="text-center text-3xl font-bold">We're just getting started</h3>
+            <p className="mt-4 text-center text-slate-400">
+              You won't find testimonials on this page, because we don't have members yet. When we
+              do, and when they agree to be quoted, their words will go here — real names they
+              choose, real experiences, nothing invented.
+            </p>
 
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  quote:
-                    "When anxiety hits at 3 AM, HELD understands. She remembers. No judgment. Changed everything.",
-                  name: "Alex • East Coast",
-                },
-                {
-                  quote:
-                    "The community is what surprised me. You're not just talking to an AI. You're part of something real.",
-                  name: "Jordan • Midwest",
-                },
-                {
-                  quote:
-                    "Between therapy sessions, HELD is the difference. I actually feel supported instead of abandoned.",
-                  name: "Casey • West Coast",
-                },
-              ].map(({ quote, name }) => (
-                <div key={name} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
-                  <div className="flex gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="size-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="mt-4 text-sm italic text-slate-300">"{quote}"</p>
-                  <p className="mt-4 text-sm font-medium text-slate-500">{name}</p>
-                </div>
-              ))}
+            <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-800/50 p-8">
+              <h4 className="font-semibold">What we can tell you honestly</h4>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400">
+                <li>
+                  <span className="text-white">HELD is new.</span> It works, it remembers your
+                  conversations, and it's available every hour of every day. It has not been used by
+                  thousands of people, and we're not going to pretend otherwise.
+                </li>
+                <li>
+                  <span className="text-white">It is not therapy.</span> No licensed clinician
+                  reviews your conversations. If you have a therapist, keep them.
+                </li>
+                <li>
+                  <span className="text-white">Try it before you pay.</span> You get free messages
+                  with no card required. If it doesn't help you, don't subscribe.
+                </li>
+              </ul>
             </div>
           </div>
         </section>
@@ -338,14 +352,15 @@ function Landing() {
               10 messages free. No credit card. No commitment.
             </p>
             <p className="mt-2 text-sm opacity-80">
-              Then $69.99/month for the first 100 founding members — locked in for as long as you stay subscribed.
+              Then $69.99/month for the first 100 founding members — locked in for as long as you
+              stay subscribed.
             </p>
-            <Link
-              to="/chat"
+            <button
+              onClick={handleGetStarted}
               className="mt-8 inline-flex rounded-full bg-slate-900 px-8 py-3.5 font-semibold transition-transform hover:-translate-y-0.5"
             >
               Begin Your Conversation
-            </Link>
+            </button>
           </div>
         </section>
       </main>
@@ -361,9 +376,9 @@ function Landing() {
             HELD is not therapy. It is not a substitute for professional mental health treatment.
           </p>
           <p className="mt-2 text-sm text-slate-600">
-            HELD is a support tool designed to complement professional care. If you are in
-            immediate crisis, experiencing suicidal thoughts, or in danger, please contact
-            emergency services or a crisis helpline immediately.
+            HELD is a support tool designed to complement professional care. If you are in immediate
+            crisis, experiencing suicidal thoughts, or in danger, please contact emergency services
+            or a crisis helpline immediately.
           </p>
 
           <div className="mt-6 flex justify-center">
@@ -379,7 +394,10 @@ function Landing() {
               </a>
               <p className="mt-2 text-xs text-slate-400">Available 24/7 • Free • Confidential</p>
               <p className="mt-3 text-sm font-semibold">
-                Emergency: <a href="tel:911" className="text-red-400">911</a>
+                Emergency:{" "}
+                <a href="tel:911" className="text-red-400">
+                  911
+                </a>
               </p>
             </div>
           </div>
@@ -394,8 +412,7 @@ function Landing() {
       {/* Footer */}
       <footer className="border-t border-slate-800 px-5 py-8 text-center text-xs text-slate-500">
         <p>
-          HELD is not a medical service and does not replace therapy, diagnosis, or emergency
-          care.
+          HELD is not a medical service and does not replace therapy, diagnosis, or emergency care.
         </p>
         <p className="mt-4">© {new Date().getFullYear()} HELD</p>
       </footer>

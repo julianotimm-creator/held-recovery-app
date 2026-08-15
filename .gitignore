@@ -32,3 +32,9 @@ npm-debug.log*
 # Cache
 .turbopack/
 *.cache
+
+# Nitro / Vite build output
+.output/
+.wrangler/
+.nitro/
+tsconfig.tsbuildinfo
