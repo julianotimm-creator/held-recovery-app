@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
               return;
             }
             const { error } = await supabaseAdmin
-              .from("users")
+              .from("public.users")
               .update({
                 subscription_active: isPaid,
                 subscription_status: isPaid ? "active" : "canceled",
