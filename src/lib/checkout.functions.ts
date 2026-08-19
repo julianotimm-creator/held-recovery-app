@@ -44,7 +44,7 @@ export const confirmCheckoutSession = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
-      .from("users")
+      .from("public.users")
       .update({ subscription_active: true, subscription_status: "active" })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);

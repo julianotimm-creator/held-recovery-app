@@ -9,13 +9,13 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     await requireAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const total = await supabaseAdmin.from("users").select("id", { count: "exact", head: true });
+    const total = await supabaseAdmin.from("public.users").select("id", { count: "exact", head: true });
     const paying = await supabaseAdmin
-      .from("users")
+      .from("public.users")
       .select("id", { count: "exact", head: true })
       .eq("subscription_active", true);
     const churned = await supabaseAdmin
-      .from("users")
+      .from("public.users")
       .select("id", { count: "exact", head: true })
       .eq("subscription_active", false)
       .not("stripe_customer_id", "is", null);
@@ -47,7 +47,7 @@ export const getAbandonedUsers = createServerFn({ method: "GET" })
 
     const from = (data.page - 1) * PAGE_SIZE;
     const { data: rows, count } = await supabaseAdmin
-      .from("users")
+      .from("public.users")
       .select("id, message_count, created_at, updated_at", { count: "exact" })
       .gte("message_count", 10)
       .eq("subscription_active", false)
@@ -82,7 +82,7 @@ export const getPayingSubscribers = createServerFn({ method: "GET" })
 
     const from = (data.page - 1) * PAGE_SIZE;
     const { data: rows, count } = await supabaseAdmin
-      .from("users")
+      .from("public.users")
       .select("id, message_count, created_at, updated_at", { count: "exact" })
       .eq("subscription_active", true)
       .order("updated_at", { ascending: false, nullsFirst: false })

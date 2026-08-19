@@ -8,7 +8,7 @@ export const SUBSCRIPTION_REQUIRED = "SUBSCRIPTION_REQUIRED";
 /** Throws when the current user is not an active subscriber. */
 export async function requireSubscriber(supabase: Client, userId: string): Promise<void> {
   const { data } = await supabase
-    .from("users")
+    .from("public.users")
     .select("subscription_active")
     .eq("id", userId)
     .maybeSingle();

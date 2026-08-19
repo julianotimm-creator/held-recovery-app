@@ -46,7 +46,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     });
 
     await supabase
-      .from("users")
+      .from("public.users")
       .update({ message_count: state.messageCount + 1 })
       .eq("id", userId);
 
