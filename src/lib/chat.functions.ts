@@ -22,7 +22,15 @@ export const sendMessage = createServerFn({ method: "POST" })
     const { loadState, ensureConversation, generateReply } = await import("./chat-core.server");
     const state = await loadState(supabase, userId);
 
-    if (!state.isPaid && state.messageCount >= FREE_MESSAGE_LIMIT) {
+    // Buscar dados atuais do usuário
+    const { data: userProfile } = await supabase
+      .from("public.users")
+      .select("subscription_active, free_messages_used")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // Bloquear se sem assinatura e passou 10 mensagens gratuitas
+    if (!userProfile?.subscription_active && (userProfile?.free_messages_used ?? 0) >= FREE_MESSAGE_LIMIT) {
       throw new Error("LIMIT_REACHED");
     }
 
@@ -45,10 +53,18 @@ export const sendMessage = createServerFn({ method: "POST" })
       content: reply,
     });
 
-    await supabase
-      .from("public.users")
-      .update({ message_count: state.messageCount + 1 })
-      .eq("id", userId);
+    // Incrementar free_messages_used se sem assinatura, senão message_count
+    if (!userProfile?.subscription_active) {
+      await supabase
+        .from("public.users")
+        .update({ free_messages_used: (userProfile?.free_messages_used ?? 0) + 1 })
+        .eq("id", userId);
+    } else {
+      await supabase
+        .from("public.users")
+        .update({ message_count: state.messageCount + 1 })
+        .eq("id", userId);
+    }
 
     return loadState(supabase, userId);
   });
