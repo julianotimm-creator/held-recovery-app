@@ -53,17 +53,17 @@ export const sendMessage = createServerFn({ method: "POST" })
       content: reply,
     });
 
-    // Incrementar free_messages_used se sem assinatura, senão message_count
+    // Incrementar contadores: free_messages_used se sem assinatura, message_count se pago
+    // Contar como 1 "turn" (user + assistant response)
     if (!userProfile?.subscription_active) {
+      // Usuário sem assinatura: incrementar free_messages_used
       await supabase
         .from("public.users")
         .update({ free_messages_used: (userProfile?.free_messages_used ?? 0) + 1 })
         .eq("id", userId);
     } else {
-      await supabase
-        .from("public.users")
-        .update({ message_count: state.messageCount + 1 })
-        .eq("id", userId);
+      // Usuário com assinatura: incrementar message_count usando RPC para evitar race conditions
+      await supabase.rpc("increment_message_count", { user_id: userId });
     }
 
     return loadState(supabase, userId);
