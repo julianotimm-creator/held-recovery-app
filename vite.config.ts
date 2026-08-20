@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    // Override Lovable's default cloudflare preset with Vercel for production
+    // This ensures serverless functions are generated in .output/functions/
+    preset: "vercel",
+  },
 });
