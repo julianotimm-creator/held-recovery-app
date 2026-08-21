@@ -45,7 +45,7 @@ export async function ensureConversation(supabase: Client, userId: string): Prom
 export async function loadState(supabase: Client, userId: string): Promise<ChatState> {
   const { data: profile } = await supabase
     .from("public.users")
-    .select("anonymous_id, preferred_name, message_count, subscription_active")
+    .select("anonymous_id, preferred_name, message_count, subscription_active, free_messages_used")
     .eq("id", userId)
     .maybeSingle();
 
@@ -63,13 +63,14 @@ export async function loadState(supabase: Client, userId: string): Promise<ChatS
   }));
 
   const messageCount = profile?.message_count ?? 0;
+  const freeMessagesUsed = profile?.free_messages_used ?? 0;
   const isPaid = profile?.subscription_active ?? false;
 
   return {
     username: profile?.preferred_name ?? profile?.anonymous_id ?? "User",
     isPaid,
     messageCount,
-    remaining: isPaid ? Number.POSITIVE_INFINITY : Math.max(0, FREE_MESSAGE_LIMIT - messageCount),
+    remaining: isPaid ? Number.POSITIVE_INFINITY : Math.max(0, FREE_MESSAGE_LIMIT - freeMessagesUsed),
     messages,
   };
 }
