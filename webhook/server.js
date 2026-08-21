@@ -1,205 +1,107 @@
 import express from "express";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-04-10",
+  apiVersion: "2023-10-16",
 });
 
-// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Health check (BEFORE middleware)
-app.get("/health", (req, res) => {
-  res.json({ status: "✅ Webhook server is running" });
-});
+// CRÍTICO: raw body ANTES de json()
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const signature = req.headers["stripe-signature"];
 
-// Webhook endpoint with RAW body (MUST come BEFORE express.json())
-app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  const sig = req.headers["stripe-signature"];
-
-  let event;
-
-  try {
-    // Verify Stripe signature
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    console.error(`❌ [Webhook] Signature verification failed:`, err.message);
-    return res.status(401).json({ error: "Invalid signature" });
-  }
-
-  console.log(`\n📌 [Webhook] Event received: ${event.type}`);
-  console.log(`   Event ID: ${event.id}`);
-
-  try {
-    // Handle different event types
-    switch (event.type) {
-      case "checkout.session.completed": {
-        await handleCheckoutSessionCompleted(event.data.object);
-        break;
-      }
-
-      case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        await handleSubscriptionCreatedOrUpdated(event.data.object);
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        await handleSubscriptionDeleted(event.data.object);
-        break;
-      }
-
-      case "invoice.payment_succeeded": {
-        await handleInvoicePaymentSucceeded(event.data.object);
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        await handleInvoicePaymentFailed(event.data.object);
-        break;
-      }
-
-      default:
-        console.log(`ℹ️  [Webhook] Unhandled event type: ${event.type}`);
+    if (!signature) {
+      console.error("[webhook] Missing stripe-signature");
+      return res.status(400).send("Missing signature");
     }
 
-    // Acknowledge receipt of event
-    res.json({ received: true });
-  } catch (error) {
-    console.error(`❌ [Webhook] Error processing event:`, error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
+    let event;
 
-// Apply JSON middleware AFTER webhook (for other routes)
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error("[webhook] Signature verification failed:", err.message);
+      return res.status(400).send("Webhook verification failed");
+    }
+
+    console.log("[webhook] Event verified:", event.id, event.type);
+
+    try {
+      const object = event.data.object;
+
+      async function setPaid(userId, isPaid) {
+        if (!userId) {
+          console.error("[webhook] no user id", event.id, event.type);
+          return;
+        }
+        console.log(`[webhook] Setting ${userId} subscription_active=${isPaid}`);
+        const { error } = await supabase
+          .from("users")
+          .update({
+            subscription_active: isPaid,
+            subscription_status: isPaid ? "active" : "canceled",
+          })
+          .eq("id", userId);
+        if (error) throw new Error(error.message);
+      }
+
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const userId =
+            object.client_reference_id || object?.metadata?.["user_id"];
+          await setPaid(userId, true);
+          break;
+        }
+
+        case "invoice.payment_succeeded": {
+          const userId = object?.metadata?.["user_id"];
+          await setPaid(userId, true);
+          break;
+        }
+
+        case "customer.subscription.created":
+        case "customer.subscription.updated": {
+          const userId = object?.metadata?.["user_id"];
+          const active =
+            object.status === "active" ||
+            object.status === "trialing" ||
+            !object.status;
+          await setPaid(userId, active);
+          break;
+        }
+
+        case "customer.subscription.deleted":
+        case "invoice.payment_failed": {
+          const userId = object?.metadata?.["user_id"];
+          await setPaid(userId, false);
+          break;
+        }
+      }
+
+      return res.json({ received: true });
+    } catch (error) {
+      console.error("[webhook] handler error", event.type, error);
+      return res.status(500).json({ error: "Handler error" });
+    }
+  }
+);
+
 app.use(express.json());
 
-// Event handlers
-async function handleCheckoutSessionCompleted(session) {
-  console.log(`   Processing checkout.session.completed`);
-
-  let userId = session.metadata?.user_id;
-
-  if (!userId && session.subscription) {
-    // Try to get user_id from subscription metadata
-    const subscription = await stripe.subscriptions.retrieve(session.subscription);
-    userId = subscription.metadata?.user_id;
-  }
-
-  if (!userId) {
-    console.warn(`⚠️  [Webhook] No user_id found in checkout session ${session.id}`);
-    return;
-  }
-
-  await updateUserSubscription(userId, true);
-}
-
-async function handleSubscriptionCreatedOrUpdated(subscription) {
-  console.log(`   Processing subscription event`);
-
-  const userId = subscription.metadata?.user_id;
-
-  if (!userId) {
-    console.warn(`⚠️  [Webhook] No user_id in subscription ${subscription.id}`);
-    return;
-  }
-
-  // Only activate if subscription is active or trialing
-  const shouldActivate = subscription.status === "active" || subscription.status === "trialing";
-  await updateUserSubscription(userId, shouldActivate);
-}
-
-async function handleSubscriptionDeleted(subscription) {
-  console.log(`   Processing subscription deletion`);
-
-  const userId = subscription.metadata?.user_id;
-
-  if (!userId) {
-    console.warn(`⚠️  [Webhook] No user_id in subscription ${subscription.id}`);
-    return;
-  }
-
-  await updateUserSubscription(userId, false);
-}
-
-async function handleInvoicePaymentSucceeded(invoice) {
-  console.log(`   Processing invoice.payment_succeeded`);
-
-  if (!invoice.subscription) {
-    console.log(`   No subscription in invoice, skipping`);
-    return;
-  }
-
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-  const userId = subscription.metadata?.user_id;
-
-  if (!userId) {
-    console.warn(`⚠️  [Webhook] No user_id in invoice ${invoice.id}`);
-    return;
-  }
-
-  await updateUserSubscription(userId, true);
-}
-
-async function handleInvoicePaymentFailed(invoice) {
-  console.log(`   Processing invoice.payment_failed`);
-
-  if (!invoice.subscription) {
-    console.log(`   No subscription in invoice, skipping`);
-    return;
-  }
-
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-  const userId = subscription.metadata?.user_id;
-
-  if (!userId) {
-    console.warn(`⚠️  [Webhook] No user_id in invoice ${invoice.id}`);
-    return;
-  }
-
-  await updateUserSubscription(userId, false);
-}
-
-// Database update
-async function updateUserSubscription(userId, isActive) {
-  console.log(`   Updating user ${userId}: subscription_active = ${isActive}`);
-
-  const { error } = await supabase
-    .from("public.users")
-    .update({
-      subscription_active: isActive,
-      subscription_status: isActive ? "active" : "canceled",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", userId);
-
-  if (error) {
-    console.error(`❌ [Database] Error updating user ${userId}:`, error.message);
-    throw error;
-  }
-
-  console.log(`✅ [Database] User ${userId} updated successfully`);
-}
-
-// Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\n🚀 HELD Webhook Server running on port ${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/health`);
-  console.log(`   Webhook: http://localhost:${PORT}/webhook`);
-  console.log(`\n   Waiting for Stripe events...`);
+  console.log(`Webhook server running on port ${PORT}`);
 });
