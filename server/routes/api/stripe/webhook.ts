@@ -1,6 +1,7 @@
 import type { StripeEvent } from "@/lib/stripe.server";
 
 export default defineEventHandler(async (event) => {
+  // Only accept POST
   if (event.node.req.method !== "POST") {
     throw createError({
       statusCode: 405,
@@ -8,26 +9,25 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const rawBody = await readRawBody(event);
-  const signature = getHeader(event, "stripe-signature");
-
-  const { constructStripeEvent, extractUserId, retrieveSubscription } =
-    await import("@/lib/stripe.server");
-
-  let stripeEvent: StripeEvent;
   try {
-    stripeEvent = await constructStripeEvent(rawBody, signature);
-  } catch (error) {
-    console.error("[stripe-webhook] signature verification failed", error);
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Invalid signature",
-    });
-  }
+    const rawBody = await readRawBody(event);
+    const signature = getHeader(event, "stripe-signature");
 
-  const object = stripeEvent.data.object;
+    const { constructStripeEvent, extractUserId, retrieveSubscription } =
+      await import("@/lib/stripe.server");
 
-  try {
+    let stripeEvent: StripeEvent;
+    try {
+      stripeEvent = await constructStripeEvent(rawBody, signature);
+    } catch (error) {
+      console.error("[stripe-webhook] signature verification failed", error);
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Invalid signature",
+      });
+    }
+
+    const object = stripeEvent.data.object;
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
@@ -51,6 +51,7 @@ export default defineEventHandler(async (event) => {
       if (error) throw new Error(error.message);
     }
 
+    // Handle different Stripe events
     switch (stripeEvent.type) {
       case "checkout.session.completed": {
         let userId = extractUserId(object);
@@ -79,15 +80,18 @@ export default defineEventHandler(async (event) => {
         break;
       }
       default:
+        console.log(
+          `[stripe-webhook] unhandled event type: ${stripeEvent.type}`
+        );
         break;
     }
+
+    return { received: true };
   } catch (error) {
-    console.error("[stripe-webhook] handler error", stripeEvent.type, error);
+    console.error("[stripe-webhook] handler error", error);
     throw createError({
       statusCode: 500,
-      statusMessage: "Webhook handler error",
+      statusMessage: "Internal Server Error",
     });
   }
-
-  return { received: true };
 });
