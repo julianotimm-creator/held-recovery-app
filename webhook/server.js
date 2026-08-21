@@ -19,15 +19,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Middleware
-app.use(express.json());
-
-// Health check
+// Health check (BEFORE middleware)
 app.get("/health", (req, res) => {
   res.json({ status: "✅ Webhook server is running" });
 });
 
-// Webhook endpoint
+// Webhook endpoint with RAW body (MUST come BEFORE express.json())
 app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
 
@@ -88,6 +85,9 @@ app.post("/webhook", express.raw({ type: "application/json" }), async (req, res)
     res.status(500).json({ error: error.message });
   }
 });
+
+// Apply JSON middleware AFTER webhook (for other routes)
+app.use(express.json());
 
 // Event handlers
 async function handleCheckoutSessionCompleted(session) {
