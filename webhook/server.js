@@ -9,49 +9,129 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// CRÍTICO: raw body ANTES de json()
+// CRÍTICO: raw body ANTES de json() para validar assinatura Stripe
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
-  if (!sig) return res.status(400).send('No signature');
+
+  // Log de entrada (para debugging remoto)
+  console.log(`[WEBHOOK] Evento recebido. Signature presente: ${!!sig}`);
+
+  if (!sig) {
+    console.error('[WEBHOOK] ERROR: Signature ausente');
+    return res.status(400).send('No signature');
+  }
 
   try {
+    // Validar assinatura Stripe
     const event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
 
-    const obj = event.data.object;
-    const userId = obj.metadata?.user_id || obj.client_reference_id;
+    console.log(`[WEBHOOK] Evento validado: ${event.type}`);
 
-    if (!userId) return res.json({ ok: true });
+    const obj = event.data.object;
+
+    // Extrair user ID de diferentes locais dependendo do tipo de evento
+    let userId = null;
+    if (event.type === 'checkout.session.completed') {
+      userId = obj.client_reference_id;
+    } else if (event.type === 'invoice.payment_succeeded') {
+      userId = obj.metadata?.user_id;
+    } else if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+      userId = obj.metadata?.user_id;
+    } else if (event.type === 'invoice.payment_failed') {
+      userId = obj.metadata?.user_id;
+    }
+
+    if (!userId) {
+      console.warn(`[WEBHOOK] WARN: Nenhum user_id encontrado no evento ${event.type}`);
+      return res.json({ ok: true, warning: 'no user_id found' });
+    }
+
+    console.log(`[WEBHOOK] Processando para user_id: ${userId}`);
 
     switch (event.type) {
-      case 'checkout.session.completed':
-      case 'invoice.payment_succeeded':
-        await supabase.from('users').update({ subscription_active: true }).eq('id', userId);
+      case 'checkout.session.completed': {
+        console.log(`[WEBHOOK] checkout.session.completed → subscription_active=true para ${userId}`);
+        const { error } = await supabase
+          .from('users')
+          .update({ subscription_active: true })
+          .eq('id', userId);
+        if (error) throw new Error(`Supabase error: ${error.message}`);
         break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        console.log(`[WEBHOOK] invoice.payment_succeeded → subscription_active=true para ${userId}`);
+        const { error } = await supabase
+          .from('users')
+          .update({ subscription_active: true })
+          .eq('id', userId);
+        if (error) throw new Error(`Supabase error: ${error.message}`);
+        break;
+      }
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const active = obj.status === 'active' || obj.status === 'trialing';
-        await supabase.from('users').update({ subscription_active: active }).eq('id', userId);
+        console.log(`[WEBHOOK] ${event.type} → subscription_active=${active} para ${userId}`);
+        const { error } = await supabase
+          .from('users')
+          .update({ subscription_active: active })
+          .eq('id', userId);
+        if (error) throw new Error(`Supabase error: ${error.message}`);
         break;
       }
-      case 'customer.subscription.deleted':
-      case 'invoice.payment_failed':
-        await supabase.from('users').update({ subscription_active: false }).eq('id', userId);
+
+      case 'customer.subscription.deleted': {
+        console.log(`[WEBHOOK] customer.subscription.deleted → subscription_active=false para ${userId}`);
+        const { error } = await supabase
+          .from('users')
+          .update({ subscription_active: false })
+          .eq('id', userId);
+        if (error) throw new Error(`Supabase error: ${error.message}`);
         break;
+      }
+
+      case 'invoice.payment_failed': {
+        console.log(`[WEBHOOK] invoice.payment_failed → subscription_active=false para ${userId}`);
+        const { error } = await supabase
+          .from('users')
+          .update({ subscription_active: false })
+          .eq('id', userId);
+        if (error) throw new Error(`Supabase error: ${error.message}`);
+        break;
+      }
+
+      default:
+        console.log(`[WEBHOOK] Evento ignorado: ${event.type}`);
     }
 
-    res.json({ received: true });
+    console.log(`[WEBHOOK] ✓ Evento ${event.type} processado com sucesso`);
+    res.json({ received: true, event_type: event.type });
+
   } catch (err) {
-    console.error('Webhook error:', err.message);
-    res.status(400).send(`Webhook error: ${err.message}`);
+    console.error(`[WEBHOOK] ✗ ERROR: ${err.message}`);
+    console.error(`[WEBHOOK] Stack: ${err.stack}`);
+    res.status(400).json({ error: err.message });
   }
 });
 
 app.use(express.json());
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  console.log('[HEALTH] Health check OK');
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Webhook on :${PORT}`));
+app.listen(PORT, () => {
+  console.log(`\n🚀 HELD Webhook Server iniciado na porta ${PORT}`);
+  console.log(`📍 Endpoint: https://held-webhook.onrender.com/webhook`);
+  console.log(`🔑 Stripe Secret: ${process.env.STRIPE_WEBHOOK_SECRET ? 'CONFIGURADO ✓' : 'FALTA ✗'}`);
+  console.log(`🗄️  Supabase URL: ${process.env.SUPABASE_URL ? 'CONFIGURADO ✓' : 'FALTA ✗'}`);
+  console.log(`🔐 Supabase Key: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'CONFIGURADO ✓' : 'FALTA ✗'}\n`);
+});
