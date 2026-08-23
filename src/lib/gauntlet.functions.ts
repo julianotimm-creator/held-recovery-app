@@ -38,6 +38,7 @@ export const getGauntletRuns = createServerFn({ method: "GET" })
     // `gauntlet_runs` isn't in the generated Database type yet (types.ts is
     // regenerated from the schema); cast until that sync picks up the table.
     const { data, error } = await supabaseAdmin
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("gauntlet_runs" as any)
       .select("*")
       .order("timestamp", { ascending: false })
@@ -67,11 +68,11 @@ export const runGauntletNow = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { v4: uuidv4 } = await import("uuid");
-    const { runGauntletScenarios, summarizeResults, GAUNTLET_SCENARIOS } = await import(
-      "./gauntlet-core"
-    );
+    const { runGauntletScenarios, summarizeResults, GAUNTLET_SCENARIOS } =
+      await import("./gauntlet-core");
 
     const { data: lastRun } = await supabaseAdmin
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
       .from("gauntlet_runs" as any)
       .select("timestamp")
       .order("timestamp", { ascending: false })
@@ -79,7 +80,8 @@ export const runGauntletNow = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (lastRun && "timestamp" in lastRun) {
-      const elapsedMinutes = (Date.now() - new Date(lastRun.timestamp as string).getTime()) / 60_000;
+      const elapsedMinutes =
+        (Date.now() - new Date(lastRun.timestamp as string).getTime()) / 60_000;
       if (elapsedMinutes < RATE_LIMIT_MINUTES) {
         const minutesLeft = Math.ceil(RATE_LIMIT_MINUTES - elapsedMinutes);
         throw new Error(`${RATE_LIMITED_PREFIX}${minutesLeft}`);
@@ -94,6 +96,7 @@ export const runGauntletNow = createServerFn({ method: "POST" })
     const summary = summarizeResults(results);
     const timestamp = new Date().toISOString();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
     const { error } = await supabaseAdmin.from("gauntlet_runs" as any).insert([
       {
         run_id: uuidv4(),

@@ -26,10 +26,7 @@ import {
 export const Route = createFileRoute("/admin/gauntlet-history")({
   ssr: false,
   head: () => ({
-    meta: [
-      { title: "HELD Admin — Gauntlet History" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "HELD Admin — Gauntlet History" }, { name: "robots", content: "noindex" }],
   }),
   component: GauntletHistoryPage,
 });
@@ -269,7 +266,13 @@ function GauntletHistoryDashboard() {
                   <XAxis dataKey="date" />
                   <YAxis domain={[0, 100]} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -345,7 +348,9 @@ function GauntletHistoryDashboard() {
                       </td>
                       <td className="text-center font-bold">{run.avg_score.toFixed(1)}%</td>
                       <td className="text-center text-sm">{run.voice_score?.toFixed(0) ?? "-"}%</td>
-                      <td className="text-center text-sm">{run.crisis_score?.toFixed(0) ?? "-"}%</td>
+                      <td className="text-center text-sm">
+                        {run.crisis_score?.toFixed(0) ?? "-"}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>

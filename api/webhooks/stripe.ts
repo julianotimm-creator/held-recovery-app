@@ -38,6 +38,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       process.env["STRIPE_WEBHOOK_SECRET"]!.trim()
     );
 
+    // event.data.object's shape depends on event.type; narrowing it per-case isn't worth it here.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const obj = event.data.object as any;
     const userId = obj.metadata?.user_id || obj.client_reference_id;
 
@@ -61,9 +63,10 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     }
 
     return res.json({ received: true });
-  } catch (err: any) {
-    console.error('Webhook error:', err.message);
-    return res.status(400).send(`Webhook error: ${err.message}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Webhook error:', message);
+    return res.status(400).send(`Webhook error: ${message}`);
   }
 };
 
