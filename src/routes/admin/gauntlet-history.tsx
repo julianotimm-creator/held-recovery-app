@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   LineChart,
@@ -16,7 +16,12 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/use-session";
 import { MagicLinkLogin } from "@/components/MagicLinkLogin";
-import { getGauntletRuns, type GauntletRun } from "@/lib/gauntlet.functions";
+import {
+  getGauntletRuns,
+  runGauntletNow,
+  RATE_LIMITED_PREFIX,
+  type GauntletRun,
+} from "@/lib/gauntlet.functions";
 
 export const Route = createFileRoute("/admin/gauntlet-history")({
   ssr: false,
@@ -57,6 +62,7 @@ function GauntletHistoryPage() {
 function GauntletHistoryDashboard() {
   const queryClient = useQueryClient();
   const runsFn = useServerFn(getGauntletRuns);
+  const runNowFn = useServerFn(runGauntletNow);
   const [selectedRun, setSelectedRun] = useState<GauntletRun | null>(null);
 
   const {
@@ -69,6 +75,18 @@ function GauntletHistoryDashboard() {
     queryFn: () => runsFn(),
     retry: false,
   });
+
+  const runMutation = useMutation({
+    mutationFn: () => runNowFn(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gauntlet-runs"] });
+    },
+  });
+
+  const runErrorMessage = runMutation.error ? String((runMutation.error as Error).message) : null;
+  const rateLimitMinutes = runErrorMessage?.startsWith(RATE_LIMITED_PREFIX)
+    ? runErrorMessage.slice(RATE_LIMITED_PREFIX.length)
+    : null;
 
   async function logout() {
     await queryClient.cancelQueries();
@@ -143,15 +161,45 @@ function GauntletHistoryDashboard() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-4xl font-bold">📊 Gauntlet History</h1>
           <div className="flex gap-2">
+            <Button onClick={() => runMutation.mutate()} disabled={runMutation.isPending}>
+              {runMutation.isPending ? "⏳ Rodando..." : "🚀 Rodar Gauntlet Agora"}
+            </Button>
             <Button onClick={() => refetch()}>🔄 Refresh</Button>
             <Button variant="destructive" className="rounded-full" onClick={logout}>
               Sair
             </Button>
           </div>
         </div>
+
+        {runMutation.isPending && (
+          <p className="mb-8 text-sm text-muted-foreground">
+            Rodando os 50 cenários do Gauntlet, isso leva alguns segundos...
+          </p>
+        )}
+
+        {rateLimitMinutes && (
+          <p className="mb-8 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            Gauntlet já rodou nos últimos 60 minutos. Espere {rateLimitMinutes} minuto
+            {rateLimitMinutes === "1" ? "" : "s"}.
+          </p>
+        )}
+
+        {runErrorMessage && !rateLimitMinutes && (
+          <p className="mb-8 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            Erro ao rodar o Gauntlet: {runErrorMessage}
+          </p>
+        )}
+
+        {runMutation.isSuccess && !runMutation.isPending && (
+          <p className="mb-8 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm">
+            ✅ Gauntlet concluído: {runMutation.data.passed}/
+            {runMutation.data.passed + runMutation.data.failed} passaram (
+            {runMutation.data.avg_score.toFixed(1)}%).
+          </p>
+        )}
 
         {latestRun && (
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
