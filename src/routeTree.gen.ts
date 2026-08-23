@@ -15,7 +15,7 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
+import { Route as AdminGauntletHistoryRouteImport } from './routes/admin/gauntlet-history'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,39 +47,39 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
-  id: '/api/public/webhooks/stripe',
-  path: '/api/public/webhooks/stripe',
-  getParentRoute: () => rootRouteImport,
+const AdminGauntletHistoryRoute = AdminGauntletHistoryRouteImport.update({
+  id: '/gauntlet-history',
+  path: '/gauntlet-history',
+  getParentRoute: () => AdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/terms': typeof TermsRoute
-  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
+  '/admin/gauntlet-history': typeof AdminGauntletHistoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/terms': typeof TermsRoute
-  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
+  '/admin/gauntlet-history': typeof AdminGauntletHistoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/terms': typeof TermsRoute
-  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
+  '/admin/gauntlet-history': typeof AdminGauntletHistoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +90,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/terms'
-    | '/api/public/webhooks/stripe'
+    | '/admin/gauntlet-history'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -99,7 +99,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/terms'
-    | '/api/public/webhooks/stripe'
+    | '/admin/gauntlet-history'
   id:
     | '__root__'
     | '/'
@@ -108,17 +108,16 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/terms'
-    | '/api/public/webhooks/stripe'
+    | '/admin/gauntlet-history'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ChatRoute: typeof ChatRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   TermsRoute: typeof TermsRoute
-  ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,24 +164,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/webhooks/stripe': {
-      id: '/api/public/webhooks/stripe'
-      path: '/api/public/webhooks/stripe'
-      fullPath: '/api/public/webhooks/stripe'
-      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/gauntlet-history': {
+      id: '/admin/gauntlet-history'
+      path: '/gauntlet-history'
+      fullPath: '/admin/gauntlet-history'
+      preLoaderRoute: typeof AdminGauntletHistoryRouteImport
+      parentRoute: typeof AdminRoute
     }
   }
 }
 
+interface AdminRouteChildren {
+  AdminGauntletHistoryRoute: typeof AdminGauntletHistoryRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminGauntletHistoryRoute: AdminGauntletHistoryRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   ChatRoute: ChatRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   TermsRoute: TermsRoute,
-  ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
