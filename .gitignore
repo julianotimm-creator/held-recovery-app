@@ -29,6 +29,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Gauntlet test output
+/gauntlet-results.json
+
 # Cache
 .turbopack/
 *.cache
