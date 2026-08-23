@@ -18,9 +18,8 @@ import { useSession } from "@/hooks/use-session";
 import { MagicLinkLogin } from "@/components/MagicLinkLogin";
 import {
   getGauntletRuns,
-  runGauntletNow,
-  RATE_LIMITED_PREFIX,
   type GauntletRun,
+  type GauntletRunResult,
 } from "@/lib/gauntlet.functions";
 
 export const Route = createFileRoute("/admin/gauntlet-history")({
@@ -59,7 +58,6 @@ function GauntletHistoryPage() {
 function GauntletHistoryDashboard() {
   const queryClient = useQueryClient();
   const runsFn = useServerFn(getGauntletRuns);
-  const runNowFn = useServerFn(runGauntletNow);
   const [selectedRun, setSelectedRun] = useState<GauntletRun | null>(null);
 
   const {
@@ -74,16 +72,26 @@ function GauntletHistoryDashboard() {
   });
 
   const runMutation = useMutation({
-    mutationFn: () => runNowFn(),
+    mutationFn: async (): Promise<GauntletRunResult> => {
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      if (!currentSession) throw new Error("Sessão expirada, entre novamente.");
+
+      const res = await fetch("/api/gauntlet/run", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${currentSession.access_token}` },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? `Erro ao rodar o Gauntlet (${res.status})`);
+      return body as GauntletRunResult;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gauntlet-runs"] });
     },
   });
 
   const runErrorMessage = runMutation.error ? String((runMutation.error as Error).message) : null;
-  const rateLimitMinutes = runErrorMessage?.startsWith(RATE_LIMITED_PREFIX)
-    ? runErrorMessage.slice(RATE_LIMITED_PREFIX.length)
-    : null;
 
   async function logout() {
     await queryClient.cancelQueries();
@@ -177,16 +185,9 @@ function GauntletHistoryDashboard() {
           </p>
         )}
 
-        {rateLimitMinutes && (
+        {runErrorMessage && (
           <p className="mb-8 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            Gauntlet já rodou nos últimos 60 minutos. Espere {rateLimitMinutes} minuto
-            {rateLimitMinutes === "1" ? "" : "s"}.
-          </p>
-        )}
-
-        {runErrorMessage && !rateLimitMinutes && (
-          <p className="mb-8 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            Erro ao rodar o Gauntlet: {runErrorMessage}
+            {runErrorMessage}
           </p>
         )}
 

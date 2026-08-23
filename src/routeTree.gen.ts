@@ -16,6 +16,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminGauntletHistoryRouteImport } from './routes/admin/gauntlet-history'
+import { Route as ApiGauntletRunRouteImport } from './routes/api/gauntlet/run'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const AdminGauntletHistoryRoute = AdminGauntletHistoryRouteImport.update({
   path: '/gauntlet-history',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiGauntletRunRoute = ApiGauntletRunRouteImport.update({
+  id: '/api/gauntlet/run',
+  path: '/api/gauntlet/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/terms': typeof TermsRoute
   '/admin/gauntlet-history': typeof AdminGauntletHistoryRoute
+  '/api/gauntlet/run': typeof ApiGauntletRunRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/terms': typeof TermsRoute
   '/admin/gauntlet-history': typeof AdminGauntletHistoryRoute
+  '/api/gauntlet/run': typeof ApiGauntletRunRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/terms': typeof TermsRoute
   '/admin/gauntlet-history': typeof AdminGauntletHistoryRoute
+  '/api/gauntlet/run': typeof ApiGauntletRunRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/terms'
     | '/admin/gauntlet-history'
+    | '/api/gauntlet/run'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/terms'
     | '/admin/gauntlet-history'
+    | '/api/gauntlet/run'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/terms'
     | '/admin/gauntlet-history'
+    | '/api/gauntlet/run'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   TermsRoute: typeof TermsRoute
+  ApiGauntletRunRoute: typeof ApiGauntletRunRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminGauntletHistoryRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/gauntlet/run': {
+      id: '/api/gauntlet/run'
+      path: '/api/gauntlet/run'
+      fullPath: '/api/gauntlet/run'
+      preLoaderRoute: typeof ApiGauntletRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -191,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   TermsRoute: TermsRoute,
+  ApiGauntletRunRoute: ApiGauntletRunRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
