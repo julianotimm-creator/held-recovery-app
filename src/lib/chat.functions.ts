@@ -44,7 +44,23 @@ export const sendMessage = createServerFn({ method: "POST" })
       content: data.content,
     });
 
-    const reply = await generateReply([...history, { role: "user", content: data.content }]);
+    const reply = await generateReply(userId, [
+      ...history,
+      { role: "user", content: data.content },
+    ]);
+
+    // HELD Learning System: salva a interação e atualiza o perfil do usuário
+    // para futuras personalizações. Fire-and-forget: as duas funções já
+    // engolem seus próprios erros internamente, e não devem atrasar a
+    // resposta do chat nem quebrá-lo se a tabela ainda não existir.
+    const { saveInteractionData } = await import("./interactionLogger.server");
+    const { updateUserProfile } = await import("./userProfileUpdater.server");
+    saveInteractionData(userId, { userMessage: data.content, claudeResponse: reply }).catch(
+      (err) => console.error("[interactionLogger] failed to save interaction:", err),
+    );
+    updateUserProfile(userId).catch((err) =>
+      console.error("[userProfileUpdater] failed to update profile:", err),
+    );
 
     await supabase.from("messages").insert({
       conversation_id: conversationId,

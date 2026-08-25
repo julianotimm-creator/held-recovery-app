@@ -1,17 +1,15 @@
-// src/lib/userProfileUpdater.ts
+// src/lib/userProfileUpdater.server.ts
 // Atualiza perfil do usuário com técnicas que funcionam, triggers conhecidos, etc
+//
+// .server.ts: mesma regra do interactionLogger.server.ts — service-role key,
+// nunca importar no topo de uma rota ou *.functions.ts.
 
-import { createClient } from '@supabase/supabase-js';
-import { hashUserId, detectPattern } from './interactionLogger';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { hashUserId, detectPattern } from './interactionLogger.server';
 
 /**
  * Inferir categoria de recuperação (alcohol, opioid, cocaine, gambling, etc)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- rows come from an untyped query (table not in generated types yet)
 function inferRecoveryCategory(interactions: any[]): string {
   const keywords = {
     alcohol: ['drink', 'beer', 'wine', 'hangover', 'bar', 'alcohol'],
@@ -36,6 +34,7 @@ function inferRecoveryCategory(interactions: any[]): string {
 /**
  * Calcular melhor técnica para este usuário (o que funcionou mais vezes)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
 function calculateBestTechnique(interactions: any[]): { technique: string; rate: number } {
   const techniques: { [key: string]: { success: number; total: number } } = {};
 
@@ -57,10 +56,11 @@ function calculateBestTechnique(interactions: any[]): { technique: string; rate:
     if (!techniques[technique]) {
       techniques[technique] = { success: 0, total: 0 };
     }
+    const stats = techniques[technique]!;
 
-    techniques[technique].total++;
+    stats.total++;
     // Assume sucesso se user continuou conversando (simples heuristic)
-    techniques[technique].success++;
+    stats.success++;
   }
 
   // Encontrar técnica com melhor taxa
@@ -81,6 +81,7 @@ function calculateBestTechnique(interactions: any[]): { technique: string; rate:
 /**
  * Detectar triggers comuns
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
 function detectTriggers(interactions: any[]): string[] {
   const triggerKeywords = {
     weekend: ['friday', 'saturday', 'sunday', 'weekend'],
@@ -115,10 +116,15 @@ function detectTriggers(interactions: any[]): string[] {
  */
 export async function updateUserProfile(userId: string): Promise<void> {
   try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const userHash = await hashUserId(userId);
 
+    // `user_conversations`/`user_profiles` aren't in the generated Database
+    // type yet; querying through an untyped client avoids type-checker
+    // gymnastics until it is.
     // Buscar últimas 30 interações do usuário
-    const { data: interactions, error: fetchError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: interactions, error: fetchError } = await (supabaseAdmin as any)
       .from('user_conversations')
       .select('*')
       .eq('user_hash', userHash)
@@ -137,11 +143,13 @@ export async function updateUserProfile(userId: string): Promise<void> {
 
     // Contar relapses (detectar por padrão)
     const relapseCount = interactions.filter(
-      i => detectPattern(i.user_message) === 'cravings'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
+      (i: any) => detectPattern(i.user_message) === 'cravings'
     ).length;
 
     // Verificar se profile existe
-    const { data: existingProfile } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
+    const { data: existingProfile } = await (supabaseAdmin as any)
       .from('user_profiles')
       .select('*')
       .eq('user_hash', userHash)
@@ -149,7 +157,8 @@ export async function updateUserProfile(userId: string): Promise<void> {
 
     if (existingProfile) {
       // UPDATE
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
+      await (supabaseAdmin as any)
         .from('user_profiles')
         .update({
           recovery_category: category,
@@ -165,7 +174,8 @@ export async function updateUserProfile(userId: string): Promise<void> {
       console.log(`✅ Profile updated (${bestTechnique} at ${(successRate * 100).toFixed(1)}%)`);
     } else {
       // INSERT
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
+      await (supabaseAdmin as any)
         .from('user_profiles')
         .insert({
           user_hash: userHash,

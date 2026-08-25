@@ -4,22 +4,8 @@ import { FREE_MESSAGE_LIMIT, type ChatMessage, type ChatState } from "./chat-cor
 
 type Client = SupabaseClient<Database>;
 
-const SYSTEM_PROMPT =
-  "You are HELD, an AI companion specialized in recovery. " +
-  "Built by people who live/lived depression, panic, addiction. " +
-  "Trained on recovery patterns that actually work (lived experience, not theory alone). " +
-  "Available 24/7, completely anonymous, zero judgment. " +
-  "Listen with genuine empathy. " +
-  "Identify patterns (anhedonia, rumination, avoidance, trigger cycles). " +
-  "Suggest ONE subtle technique per message (after 1st message). " +
-  "Be warm, not clinical. Sound like someone who's been there. " +
-  "Keep responses under 200 tokens. " +
-  "Honest, not fake-positive. " +
-  "Direct, concise, real. " +
-  "If detect: suicide, self-harm, substance abuse → Mention: 988 (Suicide & Crisis Lifeline) or text HELLO to 741741. " +
-  "Don't lecture, just offer resource. " +
-  "User is COMPLETELY ANONYMOUS. You are NOT a therapist or doctor. You are a companion. " +
-  "Answer in the same language the user writes in. Start with warmth.";
+// The static system prompt used to live here; generateReply() now builds a
+// personalized one per-request via promptBuilder.server.ts's MILES persona.
 
 export async function ensureConversation(supabase: Client, userId: string): Promise<string> {
   const { data: existing } = await supabase
@@ -76,10 +62,20 @@ export async function loadState(supabase: Client, userId: string): Promise<ChatS
 }
 
 export async function generateReply(
+  userId: string,
   history: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI indisponível no momento");
+
+  const lastUserMessage = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
+  const { detectPattern } = await import("./interactionLogger.server");
+  const { buildPersonalizedPrompt } = await import("./promptBuilder.server");
+  const pattern = detectPattern(lastUserMessage);
+  const systemPrompt = await buildPersonalizedPrompt(
+    userId,
+    pattern === "unknown" ? undefined : pattern,
+  );
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -89,7 +85,7 @@ export async function generateReply(
     },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history],
+      messages: [{ role: "system", content: systemPrompt }, ...history],
       max_tokens: 300,
     }),
   });

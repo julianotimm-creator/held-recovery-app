@@ -1,19 +1,19 @@
-// src/lib/interactionLogger.ts
+// src/lib/interactionLogger.server.ts
 // Salva conversas anonimizadas no Supabase para análise de padrões
+//
+// .server.ts: usa a service-role key, então só pode ser importado de outros
+// módulos .server.ts ou via `await import(...)` dinâmico dentro de um handler
+// de servidor — nunca no topo de uma rota ou *.functions.ts (esses vão pro
+// bundle do cliente). Reusa o client já centralizado em client.server.ts em
+// vez de criar um novo — mesma regra que o resto do projeto segue.
 
-import { createClient } from '@supabase/supabase-js';
 import * as crypto from 'crypto';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
 
 /**
  * Hash userId para anonimizar
  */
 export async function hashUserId(userId: string): Promise<string> {
-  const salt = process.env.HASH_SALT || 'default-salt-change-this';
+  const salt = process.env['HASH_SALT'] || 'default-salt-change-this';
   const data = userId + salt;
   const hash = crypto.createHash('sha256').update(data).digest('hex');
   return hash;
@@ -108,18 +108,21 @@ export async function saveInteractionData(
   }
 ): Promise<void> {
   try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const userHash = await hashUserId(userId);
     const pattern = detectPattern(data.userMessage);
     const financialContext = detectFinancialContext(data.userMessage);
 
-    // Salvar em user_conversations
-    const { error } = await supabase
-      .from('user_conversations')
+    // Salvar em user_conversations. Sem user_id bruto: é o que torna isso
+    // "anonimizado" — só o hash salgado fica gravado.
+    const { error } = await supabaseAdmin
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types yet
+      .from('user_conversations' as any)
       .insert({
-        user_id: userId,
         user_hash: userHash,
         user_message: data.userMessage,
         claude_response: data.claudeResponse,
+        response_length: data.claudeResponse.length,
         pattern: pattern,
         financial_context: financialContext,
         created_at: new Date().toISOString()
@@ -140,10 +143,12 @@ export async function saveInteractionData(
  */
 export async function fetchUserConversations(userId: string, limit: number = 30) {
   try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const userHash = await hashUserId(userId);
 
-    const { data, error } = await supabase
-      .from('user_conversations')
+    const { data, error } = await supabaseAdmin
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types yet
+      .from('user_conversations' as any)
       .select('*')
       .eq('user_hash', userHash)
       .order('created_at', { ascending: false })

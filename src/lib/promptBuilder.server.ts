@@ -1,16 +1,13 @@
-// src/lib/promptBuilder.ts
+// src/lib/promptBuilder.server.ts
 // Constrói system prompt personalizado com:
 // 1. MILES persona base
 // 2. Dados do usuário (best_technique, triggers)
 // 3. Padrões descobertos (o que funciona em geral)
+//
+// .server.ts: mesma regra do interactionLogger.server.ts — service-role key,
+// nunca importar no topo de uma rota ou *.functions.ts.
 
-import { createClient } from '@supabase/supabase-js';
-import { hashUserId } from './interactionLogger';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { hashUserId } from './interactionLogger.server';
 
 const MILES_BASE = `You are MILES, recovery companion of HELD.
 
@@ -53,7 +50,11 @@ Crisis: "Call 988 now. They have real counselors. I'll be here after. Please go.
  */
 async function getLatestPatterns() {
   try {
-    const { data } = await supabase
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    // `pattern_discoveries` isn't in the generated Database type yet; querying
+    // through an untyped client avoids type-checker gymnastics until it is.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabaseAdmin as any)
       .from('pattern_discoveries')
       .select('*')
       .order('created_at', { ascending: false })
@@ -71,9 +72,11 @@ async function getLatestPatterns() {
  */
 async function getUserProfile(userId: string) {
   try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const userHash = await hashUserId(userId);
 
-    const { data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
+    const { data } = await (supabaseAdmin as any)
       .from('user_profiles')
       .select('*')
       .eq('user_hash', userHash)
@@ -103,6 +106,7 @@ export async function buildPersonalizedPrompt(
       const patternStats = globalPatterns[userPattern];
       if (patternStats) {
         prompt += `\nFor ${userPattern} responses:`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- patternStats comes from an untyped query
         Object.entries(patternStats).forEach(([responseType, stats]: any) => {
           if (stats.successRate) {
             prompt += `\n  - ${responseType}: ${stats.successRate}% success`;
