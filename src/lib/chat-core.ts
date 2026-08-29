@@ -1,5 +1,14 @@
 export const FREE_MESSAGE_LIMIT = 10;
 
+// Immutable — this is the first message HELD ever sends a new user, seeded
+// server-side (see loadState) so it's guaranteed to exist before any user
+// input or LLM call happens.
+export const FIRST_MESSAGE_GREETING =
+  "I'm happy to meet you.\n" +
+  "How would you like me to call you?\n" +
+  "Your name, a nickname... whatever makes you feel comfortable.\n" +
+  "And no rush — you set the pace here.";
+
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant";

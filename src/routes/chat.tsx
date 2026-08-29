@@ -151,11 +151,6 @@ function ChatWindow() {
       <div className="surface-panel flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {isLoading && <p className="text-sm text-muted-foreground">Loading conversation...</p>}
-          {!isLoading && data?.messages.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              You're safe here. How are you feeling right now?
-            </p>
-          )}
           {data?.messages.map((m) => (
             <div
               key={m.id}
@@ -164,8 +159,8 @@ function ChatWindow() {
               <div
                 className={
                   m.role === "user"
-                    ? "max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground"
-                    : "max-w-[85%] rounded-2xl rounded-bl-sm bg-secondary px-4 py-2.5 text-sm text-secondary-foreground"
+                    ? "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground"
+                    : "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-secondary px-4 py-2.5 text-sm text-secondary-foreground"
                 }
               >
                 {m.content}

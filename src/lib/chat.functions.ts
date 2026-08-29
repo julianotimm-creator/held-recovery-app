@@ -25,7 +25,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     // Buscar dados atuais do usuário
     const { data: userProfile } = await supabase
       .from("public.users")
-      .select("subscription_active, free_messages_used")
+      .select("subscription_active, free_messages_used, preferred_name")
       .eq("id", userId)
       .maybeSingle();
 
@@ -44,23 +44,36 @@ export const sendMessage = createServerFn({ method: "POST" })
       content: data.content,
     });
 
-    const reply = await generateReply(userId, [
-      ...history,
-      { role: "user", content: data.content },
-    ]);
+    // The mandatory first greeting (seeded by loadState) asks for a name.
+    // This is that reply — capture it deterministically instead of letting
+    // the LLM paraphrase it, so the name is always saved correctly.
+    const isNameCapture = !userProfile?.preferred_name && !history.some((m) => m.role === "user");
 
-    // HELD Learning System: salva a interação e atualiza o perfil do usuário
-    // para futuras personalizações. Fire-and-forget: as duas funções já
-    // engolem seus próprios erros internamente, e não devem atrasar a
-    // resposta do chat nem quebrá-lo se a tabela ainda não existir.
-    const { saveInteractionData } = await import("./interactionLogger.server");
-    const { updateUserProfile } = await import("./userProfileUpdater.server");
-    saveInteractionData(userId, { userMessage: data.content, claudeResponse: reply }).catch(
-      (err) => console.error("[interactionLogger] failed to save interaction:", err),
-    );
-    updateUserProfile(userId).catch((err) =>
-      console.error("[userProfileUpdater] failed to update profile:", err),
-    );
+    let reply: string;
+    if (isNameCapture) {
+      const preferredName = data.content.trim().replace(/\s+/g, " ").slice(0, 60);
+      await supabase.from("public.users").update({ preferred_name: preferredName }).eq("id", userId);
+      reply = `Got it, ${preferredName}! I'm here to listen.`;
+    } else {
+      reply = await generateReply(
+        userId,
+        [...history, { role: "user", content: data.content }],
+        userProfile?.preferred_name,
+      );
+
+      // HELD Learning System: salva a interação e atualiza o perfil do usuário
+      // para futuras personalizações. Fire-and-forget: as duas funções já
+      // engolem seus próprios erros internamente, e não devem atrasar a
+      // resposta do chat nem quebrá-lo se a tabela ainda não existir.
+      const { saveInteractionData } = await import("./interactionLogger.server");
+      const { updateUserProfile } = await import("./userProfileUpdater.server");
+      saveInteractionData(userId, { userMessage: data.content, claudeResponse: reply }).catch(
+        (err) => console.error("[interactionLogger] failed to save interaction:", err),
+      );
+      updateUserProfile(userId).catch((err) =>
+        console.error("[userProfileUpdater] failed to update profile:", err),
+      );
+    }
 
     await supabase.from("messages").insert({
       conversation_id: conversationId,
