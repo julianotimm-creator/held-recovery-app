@@ -1,11 +1,8 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+﻿import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { FIRST_MESSAGE_GREETING, FREE_MESSAGE_LIMIT, type ChatMessage, type ChatState } from "./chat-core";
 
 type Client = SupabaseClient<Database>;
-
-// The static system prompt used to live here; generateReply() now builds a
-// personalized one per-request via promptBuilder.server.ts's MILES persona.
 
 export async function ensureConversation(supabase: Client, userId: string): Promise<string> {
   const { data: existing } = await supabase
@@ -48,9 +45,6 @@ export async function loadState(supabase: Client, userId: string): Promise<ChatS
     created_at: r.created_at,
   }));
 
-  // Immutable rule: a brand-new user's very first message from HELD must be
-  // the name-greeting, before anything else. Seed it server-side on first
-  // load so it exists ahead of any user input or LLM call.
   if (messages.length === 0) {
     const conversationId = await ensureConversation(supabase, userId);
     const { data: greeting } = await supabase
@@ -65,8 +59,6 @@ export async function loadState(supabase: Client, userId: string): Promise<ChatS
       ];
     }
   } else if (profile?.preferred_name && messages.length > 0) {
-    // Returning user, name already known: greet them by name once per new
-    // calendar day, instead of silently resuming — proves continuity.
     const last = messages[messages.length - 1]!;
     const isNewDay = new Date(last.created_at).toDateString() !== new Date().toDateString();
     if (isNewDay) {
@@ -77,7 +69,7 @@ export async function loadState(supabase: Client, userId: string): Promise<ChatS
           conversation_id: conversationId,
           user_id: userId,
           role: "assistant",
-          content: `Hi ${profile.preferred_name}! Good to see you again. How are you today?`,
+          content: Hi ! Good to see you again. How are you today?,
         })
         .select("id, role, content, created_at")
         .single();
@@ -122,15 +114,17 @@ export async function generateReply(
     preferredName ?? undefined,
   );
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${key}`,
+      "x-api-key": key,
       "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [{ role: "system", content: systemPrompt }, ...history],
+      model: "claude-sonnet-4-20250514",
+      system: systemPrompt,
+      messages: history.map(m => ({ role: m.role, content: m.content })),
       max_tokens: 300,
     }),
   });
@@ -138,6 +132,8 @@ export async function generateReply(
   if (res.status === 429) throw new Error("Muitas mensagens agora. Tente em instantes.");
   if (!res.ok) throw new Error("Não consegui responder agora. Tente de novo.");
 
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  return json.choices?.[0]?.message?.content?.trim() ?? "Estou aqui com você.";
+  const json = (await res.json()) as { content?: { type: string; text?: string }[] };
+  return json.content?.[0]?.type === 'text' && json.content[0].text 
+    ? json.content[0].text.trim() 
+    : "Estou aqui com você.";
 }

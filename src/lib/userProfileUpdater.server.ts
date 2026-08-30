@@ -1,13 +1,13 @@
-// src/lib/userProfileUpdater.server.ts
-// Atualiza perfil do usuário com técnicas que funcionam, triggers conhecidos, etc
+﻿// src/lib/userProfileUpdater.server.ts
+// Atualiza perfil do usuÃ¡rio com tÃ©cnicas que funcionam, triggers conhecidos, etc
 //
-// .server.ts: mesma regra do interactionLogger.server.ts — service-role key,
+// .server.ts: mesma regra do interactionLogger.server.ts â€” service-role key,
 // nunca importar no topo de uma rota ou *.functions.ts.
 
 import { hashUserId, detectPattern } from './interactionLogger.server';
 
 /**
- * Inferir categoria de recuperação (alcohol, opioid, cocaine, gambling, etc)
+ * Inferir categoria de recuperaÃ§Ã£o (alcohol, opioid, cocaine, gambling, etc)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- rows come from an untyped query (table not in generated types yet)
 function inferRecoveryCategory(interactions: any[]): string {
@@ -32,14 +32,14 @@ function inferRecoveryCategory(interactions: any[]): string {
 }
 
 /**
- * Calcular melhor técnica para este usuário (o que funcionou mais vezes)
+ * Calcular melhor tÃ©cnica para este usuÃ¡rio (o que funcionou mais vezes)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
 function calculateBestTechnique(interactions: any[]): { technique: string; rate: number } {
   const techniques: { [key: string]: { success: number; total: number } } = {};
 
   for (const interaction of interactions) {
-    // Detectar qual técnica foi usada (baseado na resposta)
+    // Detectar qual tÃ©cnica foi usada (baseado na resposta)
     let technique = 'unknown';
     const response = (interaction.claude_response || '').toLowerCase();
 
@@ -63,7 +63,7 @@ function calculateBestTechnique(interactions: any[]): { technique: string; rate:
     stats.success++;
   }
 
-  // Encontrar técnica com melhor taxa
+  // Encontrar tÃ©cnica com melhor taxa
   let bestTechnique = 'unknown';
   let bestRate = 0;
 
@@ -112,7 +112,7 @@ function detectTriggers(interactions: any[]): string[] {
 }
 
 /**
- * Atualizar perfil do usuário
+ * Atualizar perfil do usuÃ¡rio
  */
 export async function updateUserProfile(userId: string): Promise<void> {
   try {
@@ -122,17 +122,17 @@ export async function updateUserProfile(userId: string): Promise<void> {
     // `user_conversations`/`user_profiles` aren't in the generated Database
     // type yet; querying through an untyped client avoids type-checker
     // gymnastics until it is.
-    // Buscar últimas 30 interações do usuário
+    // Buscar Ãºltimas 30 interaÃ§Ãµes do usuÃ¡rio
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: interactions, error: fetchError } = await (supabaseAdmin as any)
       .from('user_conversations')
       .select('*')
       .eq('user_hash', userHash)
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(5);
 
     if (fetchError || !interactions?.length) {
-      console.log('⏭️ Skipping profile update (not enough data)');
+      console.log('â­ï¸ Skipping profile update (not enough data)');
       return;
     }
 
@@ -141,7 +141,7 @@ export async function updateUserProfile(userId: string): Promise<void> {
     const { technique: bestTechnique, rate: successRate } = calculateBestTechnique(interactions);
     const triggers = detectTriggers(interactions);
 
-    // Contar relapses (detectar por padrão)
+    // Contar relapses (detectar por padrÃ£o)
     const relapseCount = interactions.filter(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
       (i: any) => detectPattern(i.user_message) === 'cravings'
@@ -171,7 +171,7 @@ export async function updateUserProfile(userId: string): Promise<void> {
         })
         .eq('user_hash', userHash);
 
-      console.log(`✅ Profile updated (${bestTechnique} at ${(successRate * 100).toFixed(1)}%)`);
+      console.log(`âœ… Profile updated (${bestTechnique} at ${(successRate * 100).toFixed(1)}%)`);
     } else {
       // INSERT
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
@@ -189,9 +189,9 @@ export async function updateUserProfile(userId: string): Promise<void> {
           last_updated: new Date().toISOString()
         });
 
-      console.log(`✅ Profile created (${category}, ${bestTechnique})`);
+      console.log(`âœ… Profile created (${category}, ${bestTechnique})`);
     }
   } catch (err) {
-    console.error('❌ Error in updateUserProfile:', err);
+    console.error('âŒ Error in updateUserProfile:', err);
   }
 }
