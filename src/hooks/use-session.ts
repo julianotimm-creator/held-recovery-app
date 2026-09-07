@@ -2,6 +2,19 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { clearStoredSession, readStoredSession, saveStoredSession } from "@/lib/session-store";
+import { trackSignUpConversion } from "@/utils/gtag";
+
+// Magic-link sign-in creates the account silently, so there's no separate
+// "registration submitted" step to hook a conversion into. A session whose
+// user was created within this same window is a brand-new account rather
+// than a returning login.
+const NEW_ACCOUNT_WINDOW_MS = 60_000;
+
+function isNewAccount(session: Session): boolean {
+  const { created_at, last_sign_in_at } = session.user;
+  if (!created_at || !last_sign_in_at) return false;
+  return Math.abs(new Date(last_sign_in_at).getTime() - new Date(created_at).getTime()) < NEW_ACCOUNT_WINDOW_MS;
+}
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -23,6 +36,7 @@ export function useSession() {
       // magic-link callback is still being restored. Never erase the backup
       // in that transient state.
       if (next) {
+        if (event === "SIGNED_IN" && isNewAccount(next)) trackSignUpConversion();
         saveStoredSession(next);
         setSession(next);
         setLoading(false);
